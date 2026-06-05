@@ -1,4 +1,4 @@
- name: Release
+﻿ name: Release
 
  on:
    push:
@@ -75,8 +75,8 @@
        - name: Create git tag
          run: |
            VERSION="${{ needs.check-version.outputs.version }}"
-           git config user.name "maciekdymarczyk"
-           git config user.email "maciek@roboblog.eu"
+           git config user.name "wyattmcph"
+           git config user.email "wyattmcph@users.noreply.github.com"
            git tag -a "v$VERSION" -m "Release v$VERSION"
            git push origin "v$VERSION"
 
@@ -106,6 +106,6 @@
      steps:
        - name: Success notification
          run: |
-           echo "🎉 Successfully released v${{ needs.check-version.outputs.version }}!"
+           echo "ðŸŽ‰ Successfully released v${{ needs.check-version.outputs.version }}!"
            echo "- GitHub Release: https://github.com/${{ github.repository }}/releases/tag/v${{ needs.check-version.outputs.version }}"
            echo "- PyPI: https://pypi.org/project/claude-monitor/${{ needs.check-version.outputs.version }}/"

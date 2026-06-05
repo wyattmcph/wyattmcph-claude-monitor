@@ -6,13 +6,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claude-monitor"
-version = "3.1.0"
-description = "A real-time terminal monitoring tool for Claude Code token usage with advanced analytics and Rich UI"
+version = "3.2.0"
+description = "Real-time terminal monitor for Claude Code token usage — with keyword analytics, gradient UI, and animated display"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
 authors = [{ name = "Maciek", email = "maciek@roboblog.eu" }]
-maintainers = [{ name = "Maciek", email = "maciek@roboblog.eu" }]
+maintainers = [{ name = "wyattmcph", email = "wyattmcph@users.noreply.github.com" }]
 keywords = [
   "ai", "analytics", "claude", "dashboard",
   "developer-tools", "monitoring", "rich",
@@ -74,13 +74,13 @@ test = [
 
 
 [project.urls]
-homepage = "https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor"
-repository = "https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor.git"
-documentation = "https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor#readme"
-issues = "https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/issues"
-changelog = "https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/blob/main/CHANGELOG.md"
-"Release Notes" = "https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/releases"
-"Discussions" = "https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/discussions"
+homepage = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze"
+repository = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze.git"
+documentation = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze#readme"
+issues = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze/issues"
+changelog = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze/blob/main/CHANGELOG.md"
+"Release Notes" = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze/releases"
+"Discussions" = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze/discussions"
 
 [project.scripts]
 claude-monitor = "claude_monitor.__main__:main"

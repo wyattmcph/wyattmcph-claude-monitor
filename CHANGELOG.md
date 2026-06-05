@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.2.0] - 2026-06-04
+
+### 🆕 New Features
+
+- **🔍 Keyword Analytics**: Track token usage and cost by topic across all your Claude conversations
+  - Configure keywords in `~/.claude-monitor/keywords.txt` (one per line, `#` for comments)
+  - Override on the fly with `--keywords "unreal,python,git"`
+  - Live panel shows: conversations matched, mention count, tokens, cost, % of total spend, and a mini bar chart
+- **🎨 Gradient Progress Bars**: All progress bars now fill green → yellow → red, making usage level instantly readable
+- **✨ Rich Panel Header**: The title bar is now a proper bordered Rich Panel with plan-coloured borders (orange for Pro, cyan for Max5, etc.)
+- **⚡ Animated LIVE Dot**: Pulsing indicator in the header and status bar shows the monitor is actively refreshing
+- **📈 Burn Rate Sparkline**: Mini inline chart (▁▂▃▄▅▆▇█) showing your last 20 burn-rate samples — enabled with `--animation moderate` or `--animation full`
+- **🎛️ Animation Level Control**: New `--animation` flag lets you choose how much motion you want
+  - `none` — completely static, no motion at all
+  - `subtle` — just the pulsing LIVE dot (default)
+  - `moderate` — LIVE dot + sparkline chart
+  - `full` — all animations enabled
+  - Setting is remembered between runs via `~/.claude-monitor/last_used.json`
+
+### 🔗 Links
+[3.2.0]: https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze/releases/tag/v3.2.0
+
 ## [3.1.0] - 2025-07-23
 
 ### 🆕 New Features
