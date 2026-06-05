@@ -133,6 +133,11 @@ class ConfigMenu:
             )
 
         self.console.print()
+        self.console.print("[bold]System Integration:[/bold]")
+        self.console.print("  s  Create desktop shortcut   add Monitor to your desktop")
+        self.console.print("  x  Toggle auto-start         run on Windows startup")
+
+        self.console.print()
         self.console.print("[bold]Advanced:[/bold]")
         self.console.print("  r  Reset saved settings      clear ~/.claude-monitor/last_used.json")
         self.console.print("  0  Save & return             back to monitor")
@@ -171,6 +176,10 @@ class ConfigMenu:
             return self._add_keyword()
         if choice == "9":
             self._show_popup_info()
+        if choice == "s":
+            self._create_desktop_shortcut()
+        if choice == "x":
+            self._toggle_auto_start()
         if choice == "r":
             self._reset_settings()
 
@@ -355,6 +364,40 @@ class ConfigMenu:
                 self.console.print("  [success]Preferences cleared. Defaults will apply on next start.[/success]")
             except Exception as exc:
                 self.console.print(f"  [error]Could not delete file: {exc}[/error]")
+        Prompt.ask("  Press Enter to continue", default="", console=self.console)
+
+    def _create_desktop_shortcut(self) -> None:
+        """Create a desktop shortcut for Claude Monitor."""
+        from claude_monitor.utils.system_integration import create_desktop_shortcut
+
+        if create_desktop_shortcut():
+            self.console.print("  [success]✓ Desktop shortcut created![/success]")
+        else:
+            self.console.print("  [error]✗ Failed to create desktop shortcut[/error]")
+        Prompt.ask("  Press Enter to continue", default="", console=self.console)
+
+    def _toggle_auto_start(self) -> None:
+        """Toggle auto-start on Windows startup."""
+        from claude_monitor.utils.system_integration import (
+            disable_auto_start,
+            enable_auto_start,
+            is_auto_start_enabled,
+        )
+
+        current_state = is_auto_start_enabled()
+        new_state = not current_state
+
+        if new_state:
+            if enable_auto_start():
+                self.console.print("  [success]✓ Auto-start enabled - Monitor will run on startup[/success]")
+            else:
+                self.console.print("  [error]✗ Failed to enable auto-start[/error]")
+        else:
+            if disable_auto_start():
+                self.console.print("  [success]✓ Auto-start disabled[/success]")
+            else:
+                self.console.print("  [error]✗ Failed to disable auto-start[/error]")
+
         Prompt.ask("  Press Enter to continue", default="", console=self.console)
 
     # ── Helpers ───────────────────────────────────────────────────────────────
