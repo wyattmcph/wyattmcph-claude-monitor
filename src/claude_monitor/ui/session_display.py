@@ -253,16 +253,13 @@ class SessionDisplayComponent:
             )
 
         # ── Status bar (always shown) ─────────────────────────────────────────
-        live_dot = AnimationState.live_dot(animation_level)
         if layout.tier is not LayoutTier.NANO:
             key_hints = " [dim][[bold]m[/bold]] settings  [[bold]k[/bold]] keywords  [[bold]a[/bold]] anim  |[/dim] "
         else:
-            key_hints = " "
+            key_hints = ""
         screen_buffer.append(
-            f"{_I_STATUS} [dim]{current_time_str}[/] "
-            f"o [success]Active session[/] |{key_hints}"
-            f"[dim]Ctrl+C to exit[/] "
-            f"[success]{live_dot}[/]"
+            f"[dim]{current_time_str}[/]  [success]● Active[/]{key_hints}"
+            f"[dim]Ctrl+C to exit[/]"
         )
 
         # ── Update notice (shown when a newer version is on PyPI) ────────────

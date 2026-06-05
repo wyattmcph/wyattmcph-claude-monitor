@@ -56,20 +56,12 @@ class HeaderManager:
         Returns:
             List of Rich renderables / strings for the header block.
         """
-        from claude_monitor.terminal.themes import AnimationState
-
-        live_dot = AnimationState.live_dot(animation_level)
         plan_style = _PLAN_STYLE.get(plan.lower(), "header")
 
-        # Single clean header line
-        header = Text(justify="left")
-        header.append(f"{plan.upper()}", style=f"bold {plan_style}")
-        header.append("  │  ", style="dim")
-        header.append(timezone, style="dim")
-        header.append("  │  ", style="dim")
-        header.append(f"{live_dot} LIVE", style="success")
+        # Minimal header - NO icons, just text
+        header = f"[bold {plan_style}]{plan.upper()}[/bold {plan_style}]  •  [dim]{timezone}[/dim]"
 
-        # Top rule
+        # Top rule only
         top_rule = Rule(style=plan_style)
 
         return [top_rule, header, ""]
