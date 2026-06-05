@@ -2,330 +2,100 @@
 
 ## [3.3.2] - 2026-06-04
 
-### 🐛 Bug Fixes & Polish
+### Fixes
 
-- **Plan auto-selection — never wrong again**: First time you run the monitor a one-time plan picker appears so you always start with the correct limits. Your choice is saved and remembered. Change it anytime with `[m]` → option 1 or `--plan <name>`.
-- **Instant keyboard shortcuts**: `[k]` and `[a]` now redraw the screen immediately instead of waiting for the next data refresh tick.
-- **Claude-inspired colour palette**: Replaced all neon greens/oranges/reds with a muted, warm palette drawn from Claude's brand aesthetic:
-  - Progress bars: sage green → warm orange → soft coral (no more neon)
-  - Header & labels: warm cream instead of electric blue
-  - Plan badges: Claude orange for Pro, periwinkle for Max 5, muted purple for Max 20
-  - Plan changes saved via `[m]` now persist to `last_used.json` correctly.
+- **Plan picker on first run**: The monitor now shows a one-time plan selection screen before it starts if you haven't set a plan before. Your choice is saved to `last_used.json` and applied on every subsequent run. Pass `--plan` on the command line to override it, or change it through the settings menu.
+- **Instant key response**: Pressing `k` or `a` now redraws the screen immediately instead of waiting for the next data refresh cycle.
+- **Color palette**: Replaced the neon green/orange/red gradient colors with a muted palette. Progress bars now use sage green, warm orange, and soft coral. Header labels use warm cream tones. Plan badge colors are orange (Pro), periwinkle (Max 5), and muted purple (Max 20).
+- **Plan changes saved correctly**: Changing your plan through the settings menu now persists it to `last_used.json` so it's still set next time you run.
 
-### 🔗 Links
 [3.3.2]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.3.2
+
+---
 
 ## [3.3.1] - 2026-06-04
 
-### 🆕 New Features
+### Added
 
-- **⚙️ Interactive Settings Menu**: Change any setting without touching the command line
-  - Press **`m`** while the monitor is running to open the full settings panel
-  - Or run `claude-monitor --config` / `cmonitor config` to open it standalone
-  - Change plan, animation level, theme, timezone, refresh rate — all with numbered options
-  - Edit your keywords file directly from the menu (opens in your system editor)
-  - Quick-add a keyword without opening the file
-  - All changes apply **immediately** to the running session and are **persisted** to `last_used.json`
-  - Reset to factory defaults with `[r]`
+- **Settings menu**: Press `m` while the monitor is running to open a numbered settings panel. Change plan, animation level, theme, timezone, refresh rate, edit the keywords file, or add a keyword without touching the command line. All changes apply immediately and are saved for next time.
+- **Keyboard shortcuts**: `m` opens the settings menu, `k` toggles the keyword panel, `a` cycles animation level. Hints are shown in the status bar at the bottom.
+- **Standalone config**: `claude-monitor --config` or `cmonitor config` opens the settings menu without starting the monitor.
 
-- **⌨️ Live Keyboard Shortcuts** (while monitor is running):
-  - **`m`** — open settings menu
-  - **`k`** — toggle keyword analytics panel on/off instantly
-  - **`a`** — cycle animation level (none → subtle → moderate → full)
-  - Shortcut hints shown in the status bar at the bottom of the display
-
-### 🔗 Links
 [3.3.1]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.3.1
+
+---
 
 ## [3.3.0] - 2026-06-04
 
-### 🆕 New Features
+### Added
 
-- **📐 Adaptive Layout**: Display automatically adjusts to terminal size — no overflow or wasted space
-  - **NANO** (< 18 rows): Token bar + cost + burn rate + status — fits in a tiny sliver
-  - **COMPACT** (18–27 rows): Core metrics with predictions, no keyword panel
-  - **STANDARD** (28–37 rows): Full session stats without keyword panel
-  - **FULL** (38+ rows): Everything including keyword analytics panel
-  - Keyword panel is **first section hidden** when terminal shrinks, **last shown** when it grows
-  - Bar widths scale with terminal width: 20 / 30 / 45 chars for narrow / normal / wide terminals
+- **Adaptive layout**: The display adjusts to your terminal size automatically. Under 18 rows shows bare essentials only. 18-27 rows shows core metrics. 28-37 rows shows full session stats. 38+ rows shows everything including the keyword panel. The keyword panel is always the first section hidden when the terminal shrinks and the last one added when it grows. Bar widths also scale with terminal width.
+- **Popup window** (`--popup`): A floating always-on-top window that works alongside your Claude window. Frameless, draggable, resizable. The header button cycles through three display sizes. Requires tkinter (bundled with Python on Windows and macOS; `sudo apt install python3-tk` on Linux).
+- **New icon set**: Replaced all original emoji with geometric Unicode characters (`◈` `◉` `▷` `⚡` `◆` `⏳` `✦` `↗` `●`).
+- **Zero-config keywords**: The keywords file is created automatically on first run with ten common development topics. The panel shows a setup hint when no keywords match yet rather than disappearing.
+- **`--no-show-keywords` flag**: Hides the keyword panel. The preference is saved between runs.
 
-- **🖼️ PiP Popup Window** (`--popup`): Floating always-on-top overlay for multi-monitor / side-by-side
-  - Frameless dark window, draggable by header bar
-  - Three tiers (⊞ cycles nano → compact → full)
-  - 📌 toggles always-on-top pin · ⊿ corner grip for free resize
-  - Defaults to bottom-right corner; works alongside your Claude window
-  - Requires tkinter (bundled on Windows/macOS; `sudo apt install python3-tk` on Linux)
-
-- **🎨 New Icon Set**: Complete visual refresh — all original emoji replaced with geometric Unicode
-  - `◈` cost · `◉` tokens · `▷` messages · `⚡` burn rate · `◆` model · `⏳` time · `✦` predictions · `↗` cost rate · `●` active status
-
-- **🔍 Zero-Config Keyword Analytics**: No setup needed on first run
-  - Keywords file auto-created with 10 common dev topics (python, debugging, git, api…)
-  - Panel shows a helpful config hint when no keywords match yet
-  - Edit `~/.claude-monitor/keywords.txt` to customise; `--keywords "unreal,blueprint"` for one-offs
-  - `--no-show-keywords` hides the panel (preference remembered between runs)
-
-### 🔗 Links
 [3.3.0]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.3.0
+
+---
 
 ## [3.2.2] - 2026-06-05
 
-### 🐛 Bug Fixes
-- **Gradient bars now visible in dark/light themes**: Cost colour styles in both themes were mapped to plain white/black, making all three gradient segments look identical. Now uses distinct green/orange/red colours so the fill visually transitions as usage increases.
+### Fixed
 
-### 🔗 Links
+- Gradient bars were invisible because dark and light theme cost styles were both mapped to plain white or plain black. All three segments now use distinct colors so the gradient is actually visible.
+
 [3.2.2]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.2.2
+
+---
 
 ## [3.2.1] - 2026-06-05
 
-### 🐛 Bug Fixes
-- **Windows compatibility**: Fixed blank screen on old Windows PowerShell caused by Rich `Panel` inside a `Live` display miscalculating terminal height. Header now uses `Rule` + `Text` which renders correctly on all terminals while keeping the same styled appearance.
+### Fixed
 
-### 🔗 Links
+- Blank screen on old Windows PowerShell. A Rich `Panel` component inside the `Live` display was miscalculating terminal height silently. Replaced with `Rule` + `Text` which works on all terminals.
+
 [3.2.1]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.2.1
+
+---
 
 ## [3.2.0] - 2026-06-04
 
-### 🆕 New Features
+### Added
 
-- **🔍 Keyword Analytics**: Track token usage and cost by topic across all your Claude conversations
-  - Configure keywords in `~/.claude-monitor/keywords.txt` (one per line, `#` for comments)
-  - Override on the fly with `--keywords "unreal,python,git"`
-  - Live panel shows: conversations matched, mention count, tokens, cost, % of total spend, and a mini bar chart
-- **🎨 Gradient Progress Bars**: All progress bars now fill green → yellow → red, making usage level instantly readable
-- **✨ Rich Panel Header**: The title bar is now a proper bordered Rich Panel with plan-coloured borders (orange for Pro, cyan for Max5, etc.)
-- **⚡ Animated LIVE Dot**: Pulsing indicator in the header and status bar shows the monitor is actively refreshing
-- **📈 Burn Rate Sparkline**: Mini inline chart (▁▂▃▄▅▆▇█) showing your last 20 burn-rate samples — enabled with `--animation moderate` or `--animation full`
-- **🎛️ Animation Level Control**: New `--animation` flag lets you choose how much motion you want
-  - `none` — completely static, no motion at all
-  - `subtle` — just the pulsing LIVE dot (default)
-  - `moderate` — LIVE dot + sparkline chart
-  - `full` — all animations enabled
-  - Setting is remembered between runs via `~/.claude-monitor/last_used.json`
+- **Keyword analytics**: A panel showing token and cost breakdown by topic. Configure keywords in `~/.claude-monitor/keywords.txt` or pass `--keywords "unreal,python,git"` to override for a session.
+- **Gradient progress bars**: Bars fill green to orange to red so you can read usage level at a glance.
+- **Animated header**: Rule-based header with plan-color borders and a pulsing live indicator.
+- **Burn rate sparkline**: Inline chart showing the last 20 burn rate samples. Enabled with `--animation moderate` or `--animation full`.
+- **Animation level flag**: `--animation none/subtle/moderate/full`. Setting is saved between runs.
 
-### 🔗 Links
-[3.2.0]: https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze/releases/tag/v3.2.0
+[3.2.0]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.2.0
+
+---
 
 ## [3.1.0] - 2025-07-23
 
-### 🆕 New Features
-- **📊 Usage Analysis Views**: Added `--view` parameter for different time aggregation periods
-  - `--view realtime` (default): Live monitoring with real-time updates
-  - `--view daily`: Daily token usage aggregated in comprehensive table format
-  - `--view monthly`: Monthly token usage aggregated for long-term trend analysis
+### Added
 
-### 📝 Use Cases
-- **Daily Analysis**: Track daily usage patterns and identify peak consumption periods
-- **Monthly Planning**: Long-term budget analysis and trend identification
-- **Usage Optimization**: Historical data analysis for better resource planning
+- `--view daily` and `--view monthly` table views for aggregated usage history.
+
+---
 
 ## [3.0.0] - 2025-01-13
 
-### 🚨 Breaking Changes
-- **Package Name Change**: Renamed from `claude-usage-monitor` to `claude-monitor`
-  - New installation: `pip install claude-monitor` or `uv tool install claude-monitor`
-  - New command aliases: `claude-monitor` and `cmonitor`
-- **Python Requirement**: Minimum Python version raised from 3.8 to 3.9
-- **Architecture Overhaul**: Complete rewrite from single-file to modular package structure
-- **Entry Point Changes**: Module execution now via `claude_monitor.__main__:main`
+### Breaking changes
 
-### 🏗️ Complete Architectural Restructuring
-- **📁 Professional Package Layout**: Migrated to `src/claude_monitor/` structure with proper namespace isolation
-  - Replaced single `claude_monitor.py` file with comprehensive modular architecture
-  - Implemented clean separation of concerns across 8 specialized modules
-- **🔧 Modular Design**: New package organization:
-  - `cli/` - Command-line interface and bootstrap logic
-  - `core/` - Business logic, models, settings, calculations, and pricing
-  - `data/` - Data management, analysis, and reading utilities
-  - `monitoring/` - Real-time session monitoring and orchestration
-  - `ui/` - User interface components, layouts, and display controllers
-  - `terminal/` - Terminal management and theme handling
-  - `utils/` - Formatting, notifications, timezone, and model utilities
-- **⚡ Enhanced Performance**: Optimized data processing with caching, threading, and efficient session management
-
-### 🎨 Rich Terminal UI System
-- **💫 Rich Integration**: Complete UI overhaul using Rich library for professional terminal interface
-  - Advanced progress bars with semantic color coding (🟢🟡🔴)
-  - Responsive layouts with proper terminal width handling (80+ characters required)
-  - Enhanced typography and visual hierarchy
-- **🌈 Improved Theme System**: Enhanced automatic theme detection with better contrast ratios
-- **📊 Advanced Display Components**: New progress visualization with burn rate indicators and time-based metrics
-
-### 🔒 Type Safety and Validation
-- **🛡️ Pydantic Integration**: Complete type safety implementation
-  - Comprehensive settings validation with user-friendly error messages
-  - Type-safe data models (`UsageEntry`, `SessionBlock`, `TokenCounts`)
-  - CLI parameter validation with detailed feedback
-- **⚙️ Smart Configuration**: Pydantic-based settings with last-used parameter persistence
-- **🔍 Enhanced Error Handling**: Centralized error management with optional Sentry integration
-
-### 📈 Advanced Analytics Features
-- **🧮 P90 Percentile Calculations**: Machine learning-inspired usage prediction and limit detection
-- **📊 Smart Plan Detection**: Auto-detection of Claude plan limits with custom plan support
-- **⏱️ Real-time Monitoring**: Enhanced session tracking with threading and callback systems
-- **💡 Intelligent Insights**: Advanced burn rate calculations and velocity indicators
-
-### 🔧 Developer Experience Improvements
-- **🚀 Modern Build System**: Migrated from Hatchling to Setuptools with src layout
-- **🧪 Comprehensive Testing**: Professional test infrastructure with pytest and coverage reporting
-- **📝 Enhanced Documentation**: Updated troubleshooting guide with v3.0.0-specific solutions
-- **🔄 CI/CD Reactivation**: Restored and enhanced GitHub Actions workflows:
-  - Multi-Python version testing (3.9-3.12)
-  - Automated linting with Ruff
-  - Trusted PyPI publishing with OIDC
-  - Automated version bumping and changelog management
-
-### 📦 Dependency and Packaging Updates
-- **🆕 Core Dependencies Added**:
-  - `pydantic>=2.0.0` & `pydantic-settings>=2.0.0` - Type validation and settings
-  - `numpy>=1.21.0` - Advanced calculations
-  - `sentry-sdk>=1.40.0` - Optional error tracking
-  - `pyyaml>=6.0` - Configuration file support
-- **⬆️ Dependency Upgrades**:
-  - `rich`: `>=13.0.0` → `>=13.7.0` - Enhanced UI features
-  - `pytz`: No constraint → `>=2023.3` - Improved timezone handling
-- **🛠️ Development Tools**: Expanded with MyPy, Bandit, testing frameworks, and documentation tools
-
-### 🎯 Enhanced User Features
-- **🎛️ Flexible Configuration**: Support for auto-detection, manual overrides, and persistent settings
-- **🌍 Improved Timezone Handling**: Enhanced timezone detection and validation
-- **⚡ Performance Optimizations**: Faster startup times and reduced memory usage
-- **🔔 Smart Notifications**: Enhanced feedback system with contextual messaging
-
-### 🔧 Installation and Compatibility
-- **📋 Installation Method Updates**: Full support for `uv`, `pipx`, and traditional pip installation
-- **🐧 Platform Compatibility**: Enhanced support for modern Linux distributions with externally-managed environments
-- **🛣️ Migration Path**: Automatic handling of legacy configurations and smooth upgrade experience
-
-### 📚 Technical Implementation Details
-- **🏢 Professional Architecture**: Implementation of SOLID principles with single responsibility modules
-- **🔄 Async-Ready Design**: Threading infrastructure for real-time monitoring capabilities
-- **💾 Efficient Data Handling**: Optimized JSONL parsing with error resilience
-- **🔐 Security Enhancements**: Secure configuration handling and optional telemetry integration
-
-## [2.0.0] - 2025-06-25
+- Package renamed from `claude-usage-monitor` to `claude-monitor`.
+- Python minimum version raised from 3.8 to 3.9.
+- Complete rewrite to a modular package structure (`src/claude_monitor/`).
 
 ### Added
-- **🎨 Smart Theme System**: Automatic light/dark theme detection for optimal terminal appearance
-  - Intelligent theme detection based on terminal environment, system settings, and background color
-  - Manual theme override options: `--theme light`, `--theme dark`, `--theme auto`
-  - Theme debug mode: `--theme-debug` for troubleshooting theme detection
-  - Platform-specific theme detection (macOS, Windows, Linux)
-  - Support for VSCode integrated terminal, iTerm2, Windows Terminal
-- **📊 Enhanced Progress Bar Colors**: Improved visual feedback with smart color coding
-  - Token usage progress bars with three-tier color system:
-    - 🟢 Green (0-49%): Safe usage level
-    - 🟡 Yellow (50-89%): Warning - approaching limit
-    - 🔴 Red (90-100%): Critical - near or at limit
-  - Time progress bars with consistent blue indicators
-  - Burn rate velocity indicators with emoji feedback (🐌➡️🚀⚡)
-- **🌈 Rich Theme Support**: Optimized color schemes for both light and dark terminals
-  - Dark theme: Bright colors optimized for dark backgrounds
-  - Light theme: Darker colors optimized for light backgrounds
-  - Automatic terminal capability detection (truecolor, 256-color, 8-color)
-- **🔧 Advanced Terminal Detection**: Comprehensive environment analysis
-  - COLORTERM, TERM_PROGRAM, COLORFGBG environment variable support
-  - Terminal background color querying using OSC escape sequences
-  - Cross-platform system theme integration
 
-### Changed
-- **Breaking**: Progress bar color logic now uses semantic color names (`cost.low`, `cost.medium`, `cost.high`)
-- Enhanced visual consistency across different terminal environments
-- Improved accessibility with better contrast ratios in both themes
-
-### Technical Details
-- New `usage_analyzer/themes/` module with theme detection and color management
-- `ThemeDetector` class with multi-method theme detection algorithm
-- Rich theme integration with automatic console configuration
-- Environment-aware color selection for maximum compatibility
-
-## [1.0.19] - 2025-06-23
-
-### Fixed
-- Fixed timezone handling by locking calculation to Europe/Warsaw timezone
-- Separated display timezone from reset time calculation for improved reliability
-- Removed dynamic timezone input and related error handling to simplify reset time logic
-
-## [1.0.17] - 2025-06-23
-
-### Added
-- Loading screen that displays immediately on startup to eliminate "black screen" experience
-- Visual feedback with header and "Fetching Claude usage data..." message during initial data load
-
-## [1.0.16] - 2025-06-23
-
-### Fixed
-- Fixed UnboundLocalError when Ctrl+C is pressed by initializing color variables at the start of main()
-- Fixed ccusage command hanging indefinitely by adding 30-second timeout to subprocess calls
-- Added ccusage availability check at startup with helpful error messages
-- Improved error display when ccusage fails with better debugging information
-- Fixed npm 7+ compatibility issue where npx doesn't find globally installed packages
-
-### Added
-- Timeout handling for all ccusage subprocess calls to prevent hanging
-- Pre-flight check for ccusage availability before entering main loop
-- More informative error messages suggesting installation steps and login requirements
-- Dual command execution: tries direct `ccusage` command first, then falls back to `npx ccusage`
-- Detection and reporting of which method (direct or npx) is being used
-
-## [1.0.11] - 2025-06-22
-
-### Changed
-- Replaced `init_dependency.py` with simpler `check_dependency.py` module
-- Refactored dependency checking to use separate `test_node()` and `test_npx()` functions
-- Removed automatic Node.js installation functionality in favor of explicit dependency checking
-- Updated package includes in `pyproject.toml` to reference new dependency module
-
-### Fixed
-- Simplified dependency handling by removing complex installation logic
-- Improved error messages for missing Node.js or npx dependencies
-
-## [1.0.8] - 2025-06-21
-
-### Added
-- Automatic Node.js installation support
-
-## [1.0.7] - 2025-06-21
-
-### Changed
-- Enhanced `init_dependency.py` module with improved documentation and error handling
-- Added automatic `npx` installation if not available
-- Improved cross-platform Node.js installation logic
-- Better error messages throughout the dependency initialization process
-
-## [1.0.6] - 2025-06-21
-
-### Added
-- Modern Python packaging with `pyproject.toml` and hatchling build system
-- Automatic Node.js installation via `init_dependency.py` module
-- Terminal handling improvements with input flushing and proper cleanup
-- GitHub Actions workflow for automated code quality checks
-- Pre-commit hooks configuration with Ruff linter and formatter
-- VS Code settings for consistent development experience
-- CLAUDE.md documentation for Claude Code AI assistant integration
-- Support for `uv` tool as recommended installation method
-- Console script entry point `claude-monitor` for system-wide usage
-- Comprehensive .gitignore for Python projects
-- CHANGELOG.md for tracking project history
-
-### Changed
-- Renamed main script from `ccusage_monitor.py` to `claude_monitor.py`
-- Use `npx ccusage` instead of direct `ccusage` command for better compatibility
-- Improved terminal handling to prevent input corruption during monitoring
-- Updated all documentation files (README, CONTRIBUTING, DEVELOPMENT, TROUBLESHOOTING)
-- Enhanced project structure for PyPI packaging readiness
-
-### Fixed
-- Terminal input corruption when typing during monitoring
-- Proper Ctrl+C handling with cursor restoration
-- Terminal settings restoration on exit
+- Modular architecture with separate `cli/`, `core/`, `data/`, `monitoring/`, `ui/`, and `terminal/` packages.
+- Pydantic-based settings with validation and last-used parameter persistence.
+- P90 percentile calculations for custom plan limit detection.
+- Rich terminal UI with progress bars, burn rate indicators, and theme support.
+- Automatic light/dark theme detection.
+- Multi-Python CI testing (3.9-3.12).
 
 [3.0.0]: https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/releases/tag/v3.0.0
-[2.0.0]: https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/releases/tag/v2.0.0
-[1.0.19]: https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/releases/tag/v1.0.19
-[1.0.17]: https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/releases/tag/v1.0.17
-[1.0.16]: https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/releases/tag/v1.0.16
-[1.0.11]: https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/releases/tag/v1.0.11
-[1.0.8]: https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/releases/tag/v1.0.8
-[1.0.7]: https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/releases/tag/v1.0.7
-[1.0.6]: https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor/releases/tag/v1.0.6
