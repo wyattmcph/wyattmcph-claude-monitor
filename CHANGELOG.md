@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.2.1] - 2026-06-05
+
+### 🐛 Bug Fixes
+- **Windows compatibility**: Fixed blank screen on old Windows PowerShell caused by Rich `Panel` inside a `Live` display miscalculating terminal height. Header now uses `Rule` + `Text` which renders correctly on all terminals while keeping the same styled appearance.
+
+### 🔗 Links
+[3.2.1]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.2.1
+
 ## [3.2.0] - 2026-06-04
 
 ### 🆕 New Features
