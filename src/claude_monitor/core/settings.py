@@ -102,7 +102,7 @@ class Settings(BaseSettings):
     )
 
     plan: Literal["pro", "max5", "max20", "custom"] = Field(
-        default="custom",
+        default="pro",
         description="Plan type (pro, max5, max20, custom)",
     )
 
@@ -332,8 +332,15 @@ class Settings(BaseSettings):
                         if field_name in cls.model_fields:
                             cli_provided_fields.add(field_name)
 
+            # Apply saved_plan if the user didn't pass --plan on the CLI
+            if "saved_plan" in last_params and "plan" not in cli_provided_fields:
+                try:
+                    settings.plan = last_params["saved_plan"]
+                except Exception:
+                    pass
+
             for key, value in last_params.items():
-                if key == "plan":
+                if key in ("plan", "saved_plan"):
                     continue
                 if not hasattr(settings, key):
                     continue

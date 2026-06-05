@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.3.2] - 2026-06-04
+
+### 🐛 Bug Fixes & Polish
+
+- **Plan auto-selection — never wrong again**: First time you run the monitor a one-time plan picker appears so you always start with the correct limits. Your choice is saved and remembered. Change it anytime with `[m]` → option 1 or `--plan <name>`.
+- **Instant keyboard shortcuts**: `[k]` and `[a]` now redraw the screen immediately instead of waiting for the next data refresh tick.
+- **Claude-inspired colour palette**: Replaced all neon greens/oranges/reds with a muted, warm palette drawn from Claude's brand aesthetic:
+  - Progress bars: sage green → warm orange → soft coral (no more neon)
+  - Header & labels: warm cream instead of electric blue
+  - Plan badges: Claude orange for Pro, periwinkle for Max 5, muted purple for Max 20
+  - Plan changes saved via `[m]` now persist to `last_used.json` correctly.
+
+### 🔗 Links
+[3.3.2]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.3.2
+
 ## [3.3.1] - 2026-06-04
 
 ### 🆕 New Features

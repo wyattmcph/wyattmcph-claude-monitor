@@ -372,7 +372,6 @@ class ConfigMenu:
         try:
             _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
-            # Merge with existing file
             existing: Dict[str, Any] = {}
             if _LAST_USED.exists():
                 try:
@@ -380,16 +379,20 @@ class ConfigMenu:
                 except Exception:
                     pass
 
-            existing.update(
-                {k: v for k, v in changes.items() if k != "plan"}
-            )
+            for k, v in changes.items():
+                if k == "plan":
+                    # Save plan as saved_plan so it's loaded on next run
+                    existing["saved_plan"] = v
+                else:
+                    existing[k] = v
+
             existing["timestamp"] = datetime.now().isoformat()
 
             tmp = _LAST_USED.with_suffix(".tmp")
             tmp.write_text(json.dumps(existing, indent=2), encoding="utf-8")
             tmp.replace(_LAST_USED)
         except Exception:
-            pass   # never crash over persistence
+            pass
 
 
 # ── Standalone entry point ─────────────────────────────────────────────────────

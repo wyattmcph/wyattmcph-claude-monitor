@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wyattmcph-claude-monitor"
-version = "3.3.1"
+version = "3.3.2"
 description = "Real-time terminal monitor for Claude Code token usage — with keyword analytics, gradient UI, and animated display"
 readme = "README.md"
 license = { text = "MIT" }

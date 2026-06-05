@@ -71,115 +71,134 @@ class AdaptiveColorScheme:
 
     @staticmethod
     def get_light_background_theme() -> Theme:
-        """Font colors optimized for light terminal backgrounds (WCAG AA+ contrast)."""
+        """Font colors optimized for light terminal backgrounds.
+
+        Same Claude-inspired palette as dark theme but darkened for
+        contrast against light backgrounds.
+        """
         return Theme(
             {
-                "header": "color(17)",  # Deep blue (#00005f) - 21:1 contrast
-                "info": "color(19)",  # Dark blue (#0000af) - 18:1 contrast
-                "warning": "color(166)",  # Dark orange (#d75f00) - 8:1 contrast
-                "error": "color(124)",  # Dark red (#af0000) - 12:1 contrast
-                "success": "color(22)",  # Dark green (#005f00) - 15:1 contrast
-                "value": "color(235)",  # Very dark gray (#262626) - 16:1 contrast
-                "dim": "color(243)",  # Medium gray (#767676) - 5:1 contrast
-                "separator": "color(240)",  # Light gray (#585858) - 6:1 contrast
-                "progress_bar": "black",  # Pure black for light theme
-                "highlight": "color(124)",  # Dark red (#af0000) - matches error
-                # Cost styles
-                "cost.low": "color(22)",    # Dark green
-                "cost.medium": "color(166)", # Dark orange
-                "cost.high": "color(124)",   # Dark red
-                # Table styles
-                "table.border": "color(238)",  # Medium-dark gray for better visibility
-                "table.header": "bold color(17)",  # Bold deep blue
-                "table.row": "color(235)",  # Very dark gray
-                "table.row.alt": "color(238)",  # Slightly lighter gray
-                # Progress styles
-                "progress.bar.fill": "black",  # Pure black for light theme
-                "progress.bar": "black",  # Pure black for light theme (fallback)
-                "progress.bar.empty": "color(250)",  # Very light gray for light theme
-                "progress.percentage": "bold color(235)",  # Bold very dark gray
-                # Chart styles
-                "chart.bar": "color(17)",  # Deep blue for better visibility
-                "chart.line": "color(19)",  # Darker blue
-                "chart.point": "color(124)",  # Dark red
-                "chart.axis": "color(240)",  # Light gray
-                "chart.label": "color(235)",  # Very dark gray
-                # Status styles
-                "status.active": "color(22)",  # Dark green
-                "status.inactive": "color(243)",  # Medium gray
-                "status.warning": "color(166)",  # Dark orange
-                "status.error": "color(124)",  # Dark red
-                # Time styles
-                "time.elapsed": "color(235)",  # Very dark gray
-                "time.remaining": "color(166)",  # Dark orange
-                "time.duration": "color(19)",  # Dark blue
-                # Model styles
-                "model.opus": "color(17)",  # Deep blue
-                "model.sonnet": "color(19)",  # Dark blue
-                "model.haiku": "color(22)",  # Dark green
-                "model.unknown": "color(243)",  # Medium gray
-                # Plan styles
-                "plan.pro": "color(166)",  # Orange (premium)
-                "plan.max5": "color(19)",  # Dark blue
-                "plan.max20": "color(17)",  # Deep blue
-                "plan.custom": "color(22)",  # Dark green
+                "header":    "#5C4F3D",  # dark warm brown
+                "info":      "#3D5F8A",  # dark periwinkle
+                "warning":   "#8A4F1F",  # dark Claude orange
+                "error":     "#8A3030",  # dark coral-red
+                "success":   "#2E6B50",  # dark sage
+                "value":     "#2A2520",  # near-black warm
+                "dim":       "#7A7870",  # warm mid-grey
+                "separator": "#9A9890",  # lighter divider
+                "progress_bar": "black",
+                "highlight": "#8A3030",
+
+                "cost.low":    "#2E6B50",
+                "cost.medium": "#8A4F1F",
+                "cost.high":   "#8A3030",
+
+                "table.border":   "#C0BDB6",
+                "table.header":   "bold #5C4F3D",
+                "table.row":      "#2A2520",
+                "table.row.alt":  "#4A453E",
+
+                "progress.bar.fill":    "black",
+                "progress.bar":         "black",
+                "progress.bar.empty":   "#D8D5CE",
+                "progress.percentage":  "bold #2A2520",
+
+                "chart.bar":   "#3D5F8A",
+                "chart.line":  "#5C4F3D",
+                "chart.point": "#8A3030",
+                "chart.axis":  "#9A9890",
+                "chart.label": "#2A2520",
+
+                "status.active":   "#2E6B50",
+                "status.inactive": "#7A7870",
+                "status.warning":  "#8A4F1F",
+                "status.error":    "#8A3030",
+
+                "time.elapsed":   "#2A2520",
+                "time.remaining": "#8A4F1F",
+                "time.duration":  "#3D5F8A",
+
+                "model.opus":    "#5A3D8A",
+                "model.sonnet":  "#3D5F8A",
+                "model.haiku":   "#2E6B50",
+                "model.unknown": "#7A7870",
+
+                "plan.pro":    "#8A4F1F",
+                "plan.max5":   "#3D5F8A",
+                "plan.max20":  "#5A3D8A",
+                "plan.custom": "#2E6B50",
             }
         )
 
     @staticmethod
     def get_dark_background_theme() -> Theme:
-        """Font colors optimized for dark terminal backgrounds (WCAG AA+ contrast)."""
+        """Font colors optimized for dark terminal backgrounds.
+
+        Palette inspired by Claude's brand aesthetic: warm off-whites,
+        muted sage greens, and Claude's signature warm orange — nothing
+        neon or jarring.
+        """
         return Theme(
             {
-                "header": "color(117)",  # Light blue (#87d7ff) - 14:1 contrast
-                "info": "color(111)",  # Light cyan (#87afff) - 12:1 contrast
-                "warning": "color(214)",  # Orange (#ffaf00) - 11:1 contrast
-                "error": "color(203)",  # Light red (#ff5f5f) - 9:1 contrast
-                "success": "color(118)",  # Light green (#87ff00) - 15:1 contrast
-                "value": "color(253)",  # Very light gray (#dadada) - 17:1 contrast
-                "dim": "color(245)",  # Medium light gray (#8a8a8a) - 7:1 contrast
-                "separator": "color(248)",  # Light gray (#a8a8a8) - 9:1 contrast
-                "progress_bar": "white",  # Pure white for dark theme
-                "highlight": "color(203)",  # Light red (#ff5f5f) - matches error
-                # Cost styles
-                "cost.low": "color(118)",   # Bright green
-                "cost.medium": "color(214)", # Orange
-                "cost.high": "color(203)",   # Bright red
-                # Table styles
-                "table.border": "color(248)",  # Light gray
-                "table.header": "bold color(117)",  # Bold light blue
-                "table.row": "color(253)",  # Very light gray
-                "table.row.alt": "color(251)",  # Slightly darker gray
-                # Progress styles
-                "progress.bar.fill": "white",  # Pure white for dark theme
-                "progress.bar": "white",  # Pure white for dark theme (fallback)
-                "progress.bar.empty": "color(238)",  # Darker gray for dark theme
-                "progress.percentage": "bold color(253)",  # Bold very light gray
-                # Chart styles
-                "chart.bar": "color(111)",  # Light cyan
-                "chart.line": "color(117)",  # Light blue
-                "chart.point": "color(203)",  # Light red
-                "chart.axis": "color(248)",  # Light gray
-                "chart.label": "color(253)",  # Very light gray
-                # Status styles
-                "status.active": "color(118)",  # Light green
-                "status.inactive": "color(245)",  # Medium light gray
-                "status.warning": "color(214)",  # Orange
-                "status.error": "color(203)",  # Light red
-                # Time styles
-                "time.elapsed": "color(253)",  # Very light gray
-                "time.remaining": "color(214)",  # Orange
-                "time.duration": "color(111)",  # Light cyan
-                # Model styles
-                "model.opus": "color(117)",  # Light blue
-                "model.sonnet": "color(111)",  # Light cyan
-                "model.haiku": "color(118)",  # Light green
-                "model.unknown": "color(245)",  # Medium light gray
-                # Plan styles
-                "plan.pro": "color(214)",  # Orange (premium)
-                "plan.max5": "color(111)",  # Light cyan
-                "plan.max20": "color(117)",  # Light blue
-                "plan.custom": "color(118)",  # Light green
+                # ── Core text ────────────────────────────────────────────────
+                "header":    "#C8BCA8",  # warm cream — Claude-brand feel
+                "info":      "#7B9EC5",  # muted periwinkle blue
+                "warning":   "#C97A4A",  # Claude warm orange (muted)
+                "error":     "#C06060",  # soft coral-red
+                "success":   "#6BA48C",  # muted sage green
+                "value":     "#DDD5C5",  # warm off-white
+                "dim":       "#787B85",  # cool mid-grey
+                "separator": "#52555E",  # dark divider grey
+                "progress_bar": "white",
+                "highlight": "#C06060",
+
+                # ── Cost / usage levels ───────────────────────────────────────
+                # These drive the gradient bars — intentionally muted.
+                "cost.low":    "#6BA48C",  # sage green   (< 50 %)
+                "cost.medium": "#C97A4A",  # Claude orange (50–80 %)
+                "cost.high":   "#C06060",  # soft coral   (> 80 %)
+
+                # ── Table ─────────────────────────────────────────────────────
+                "table.border":   "#484B54",
+                "table.header":   "bold #C8BCA8",
+                "table.row":      "#DDD5C5",
+                "table.row.alt":  "#B8B0A2",
+
+                # ── Progress bar internals ────────────────────────────────────
+                "progress.bar.fill":    "white",
+                "progress.bar":         "white",
+                "progress.bar.empty":   "#3A3D45",
+                "progress.percentage":  "bold #DDD5C5",
+
+                # ── Charts ───────────────────────────────────────────────────
+                "chart.bar":   "#7B9EC5",
+                "chart.line":  "#C8BCA8",
+                "chart.point": "#C06060",
+                "chart.axis":  "#52555E",
+                "chart.label": "#DDD5C5",
+
+                # ── Status ───────────────────────────────────────────────────
+                "status.active":   "#6BA48C",
+                "status.inactive": "#787B85",
+                "status.warning":  "#C97A4A",
+                "status.error":    "#C06060",
+
+                # ── Time ─────────────────────────────────────────────────────
+                "time.elapsed":   "#DDD5C5",
+                "time.remaining": "#C97A4A",
+                "time.duration":  "#7B9EC5",
+
+                # ── Model breakdown ───────────────────────────────────────────
+                "model.opus":    "#9A85C4",  # muted purple  (Opus = powerful)
+                "model.sonnet":  "#7B9EC5",  # periwinkle    (Sonnet = default)
+                "model.haiku":   "#6BA48C",  # sage          (Haiku = fast)
+                "model.unknown": "#787B85",
+
+                # ── Plan colours (used in header Rule + badge) ────────────────
+                "plan.pro":    "#C97A4A",  # warm orange  — Pro
+                "plan.max5":   "#7B9EC5",  # periwinkle   — Max 5
+                "plan.max20":  "#9A85C4",  # muted purple — Max 20
+                "plan.custom": "#6BA48C",  # sage green   — Custom
             }
         )
 

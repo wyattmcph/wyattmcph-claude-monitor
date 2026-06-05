@@ -113,6 +113,12 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         args = settings.to_namespace()
 
+        # ── First-run plan selection ───────────────────────────────────────
+        # Show a one-time plan picker if the user hasn't explicitly chosen a
+        # plan before (no saved_plan in last_used.json) AND didn't pass
+        # --plan on the CLI this invocation.
+        _plan_first_run_check(argv, args)
+
         _run_monitoring(args)
 
         return 0
@@ -125,6 +131,103 @@ def main(argv: Optional[List[str]] = None) -> int:
         logger.error(f"Monitor failed: {e}", exc_info=True)
         traceback.print_exc()
         return 1
+
+
+# ── First-run plan picker ──────────────────────────────────────────────────────
+
+def _plan_first_run_check(
+    argv: List[str], args: "argparse.Namespace"
+) -> None:
+    """Show a one-time plan selection screen if no plan has been saved yet.
+
+    Writes the choice to ``last_used.json`` as ``saved_plan`` so it is
+    applied automatically on subsequent runs.
+
+    Args:
+        argv: Raw CLI argv (used to detect explicit ``--plan`` flag).
+        args: Mutable args namespace — ``args.plan`` is updated in-place.
+    """
+    import json as _json
+
+    config_dir    = Path.home() / ".claude-monitor"
+    last_used_path = config_dir / "last_used.json"
+
+    # Already confirmed a plan before?
+    existing: Dict[str, Any] = {}
+    if last_used_path.exists():
+        try:
+            existing = _json.loads(last_used_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    if "saved_plan" in existing:
+        return   # already chosen — nothing to do
+
+    # --plan was passed explicitly on the CLI — respect it and save it
+    if any(a.startswith("--plan") for a in argv):
+        _save_plan_choice(args.plan, config_dir, last_used_path, existing)
+        return
+
+    # ── Show the one-time picker ───────────────────────────────────────────
+    from rich.console import Console as _Con
+    from rich.rule import Rule as _Rule
+    from rich.text import Text as _Txt
+
+    c = _Con()
+    c.print()
+    title = _Txt("✦  CLAUDE MONITOR  ✦  QUICK SETUP", style="bold")
+    c.print(_Rule(title=title, style="#C97A4A"))
+    c.print()
+    c.print("  [bold]What Claude plan are you on?[/bold]")
+    c.print("  [dim](This sets your token & cost limits correctly. Press [m] later to change.)[/dim]")
+    c.print()
+    c.print("  [bold cyan][1][/bold cyan]  [value]Pro[/value]           [dim]$20/month  — most common[/dim]")
+    c.print("  [bold cyan][2][/bold cyan]  [value]Max 5[/value]         [dim]$100/month — 5× usage[/dim]")
+    c.print("  [bold cyan][3][/bold cyan]  [value]Max 20[/value]        [dim]$200/month — 20× usage[/dim]")
+    c.print("  [bold cyan][4][/bold cyan]  [value]Custom[/value]        [dim]Calculate limits from your usage history[/dim]")
+    c.print()
+
+    _MAP = {"1": "pro", "2": "max5", "3": "max20", "4": "custom",
+            "pro": "pro", "max5": "max5", "max20": "max20", "custom": "custom"}
+
+    from rich.prompt import Prompt as _P
+    raw = _P.ask(
+        "  [bold cyan]Enter number or name[/bold cyan]",
+        default="1",
+        console=c,
+        show_default=False,
+    ).strip().lower()
+
+    chosen = _MAP.get(raw, "pro")
+    args.plan = chosen
+
+    c.print()
+    c.print(f"  [success]✓ Plan set to [bold]{chosen.upper()}[/bold]. "
+            f"Press [m] while running to change it.[/success]")
+    c.print()
+
+    _save_plan_choice(chosen, config_dir, last_used_path, existing)
+
+
+def _save_plan_choice(
+    plan: str,
+    config_dir: Path,
+    last_used_path: Path,
+    existing: "Dict[str, Any]",
+) -> None:
+    """Persist ``saved_plan`` to last_used.json."""
+    import json as _json
+    from datetime import datetime as _dt
+
+    try:
+        config_dir.mkdir(parents=True, exist_ok=True)
+        existing["saved_plan"] = plan
+        existing.setdefault("timestamp", _dt.now().isoformat())
+        tmp = last_used_path.with_suffix(".tmp")
+        tmp.write_text(_json.dumps(existing, indent=2), encoding="utf-8")
+        tmp.replace(last_used_path)
+    except Exception:
+        pass
 
 
 def _run_monitoring(args: argparse.Namespace) -> None:
@@ -197,12 +300,34 @@ def _run_monitoring(args: argparse.Namespace) -> None:
             )
             orchestrator.set_args(args)
 
+            # Shared mutable container so the key loop can force a re-render
+            # immediately without waiting for the next orchestrator tick.
+            # _last_data[0] = last raw data dict
+            # _last_data[1] = last token_limit
+            _last_data: List[Any] = [None, token_limit]
+
+            def _force_render() -> None:
+                """Re-render immediately using the last cached data + current args."""
+                if _last_data[0] is None or not live_display_active:
+                    return
+                try:
+                    r = display_controller.create_data_display(
+                        _last_data[0], args, _last_data[1]
+                    )
+                    live_display.update(r)
+                except Exception:
+                    pass
+
             # Setup monitoring callback
             def on_data_update(monitoring_data: Dict[str, Any]) -> None:
                 """Handle data updates from orchestrator."""
                 try:
                     data: Dict[str, Any] = monitoring_data.get("data", {})
+                    tl: int = monitoring_data.get("token_limit", token_limit)
                     blocks: List[Dict[str, Any]] = data.get("blocks", [])
+
+                    _last_data[0] = data
+                    _last_data[1] = tl
 
                     logger.debug(f"Display data has {len(blocks)} blocks")
                     if blocks:
@@ -215,7 +340,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
                             logger.debug(f"Active block tokens: {total_tokens}")
 
                     renderable = display_controller.create_data_display(
-                        data, args, monitoring_data.get("token_limit", token_limit)
+                        data, args, tl
                     )
 
                     if live_display:
@@ -284,14 +409,16 @@ def _run_monitoring(args: argparse.Namespace) -> None:
                             key_handler.resume()
 
                     elif key == "k":
-                        # ── Toggle keyword panel ────────────────────────────
+                        # ── Toggle keyword panel — immediate re-render ──────
                         args.show_keywords = not getattr(args, "show_keywords", True)
+                        _force_render()
 
                     elif key == "a":
-                        # ── Cycle animation level ───────────────────────────
+                        # ── Cycle animation level — immediate re-render ─────
                         cur = getattr(args, "animation", "subtle")
                         idx = _ANIM_LEVELS.index(cur) if cur in _ANIM_LEVELS else 1
                         args.animation = _ANIM_LEVELS[(idx + 1) % len(_ANIM_LEVELS)]
+                        _force_render()
 
                     time.sleep(0.05)
             finally:
