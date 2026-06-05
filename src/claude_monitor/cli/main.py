@@ -84,6 +84,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         setup_environment()
         ensure_directories()
 
+        # Auto-create keywords file on first run (no-op if it already exists)
+        try:
+            from claude_monitor.data.keyword_analyzer import ensure_keywords_file
+            ensure_keywords_file()
+        except Exception:
+            pass  # never crash startup over this
+
         if settings.log_file:
             setup_logging(settings.log_level, settings.log_file, disable_console=True)
         else:
@@ -128,6 +135,12 @@ def _run_monitoring(args: argparse.Namespace) -> None:
         data_path: Path = data_paths[0]
         logger = logging.getLogger(__name__)
         logger.info(f"Using data path: {data_path}")
+
+        # ── Popup / PiP mode ─────────────────────────────────────────────────
+        if getattr(args, "popup", False):
+            from claude_monitor.ui.popup_window import launch_popup
+            launch_popup(args, str(data_path))
+            return
 
         # Handle different view modes
         if view_mode in ["daily", "monthly"]:

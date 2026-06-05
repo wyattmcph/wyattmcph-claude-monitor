@@ -34,8 +34,9 @@ class LastUsedParams:
                 "refresh_rate": settings.refresh_rate,
                 "reset_hour": settings.reset_hour,
                 "view": settings.view,
-                "animation": getattr(settings, "animation", "subtle"),
-                "timestamp": datetime.now().isoformat(),
+                "animation":     getattr(settings, "animation",     "subtle"),
+                "show_keywords": getattr(settings, "show_keywords", True),
+                "timestamp":     datetime.now().isoformat(),
             }
 
             if settings.custom_limit_tokens:
@@ -149,6 +150,22 @@ class Settings(BaseSettings):
         description=(
             "Comma-separated keywords to track analytics for "
             "(e.g. 'unreal,python,git'). Overrides ~/.claude-monitor/keywords.txt"
+        ),
+    )
+
+    show_keywords: bool = Field(
+        default=True,
+        description=(
+            "Show the keyword analytics panel (requires keywords to be configured). "
+            "Use --no-show-keywords to hide it."
+        ),
+    )
+
+    popup: bool = Field(
+        default=False,
+        description=(
+            "Launch as a floating always-on-top popup window (PiP mode). "
+            "Requires tkinter (bundled with Python on Windows/macOS)."
         ),
     )
 
@@ -378,7 +395,9 @@ class Settings(BaseSettings):
         args.log_level = self.log_level
         args.log_file = str(self.log_file) if self.log_file else None
         args.version = self.version
-        args.animation = self.animation
-        args.keywords = self.keywords
+        args.animation     = self.animation
+        args.keywords      = self.keywords
+        args.show_keywords = self.show_keywords
+        args.popup         = self.popup
 
         return args

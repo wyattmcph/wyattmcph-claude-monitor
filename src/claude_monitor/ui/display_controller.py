@@ -224,8 +224,12 @@ class DisplayController:
         # Keyword analytics – initialise analyzer lazily, refresh on every call
         animation_level: str = getattr(args, "animation", "subtle")
         cli_keywords: Optional[str] = getattr(args, "keywords", None)
+        show_keywords: bool = getattr(args, "show_keywords", True)
 
-        self._refresh_keyword_stats(data, args, cli_keywords)
+        if show_keywords:
+            self._refresh_keyword_stats(data, args, cli_keywords)
+        else:
+            self._keyword_stats = None
 
         if not data or "blocks" not in data:
             screen_buffer = self.error_display.format_error_screen(

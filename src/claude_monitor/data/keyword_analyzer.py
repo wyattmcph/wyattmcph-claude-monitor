@@ -24,10 +24,20 @@ _KEYWORDS_FILE = Path.home() / ".claude-monitor" / "keywords.txt"
 _DEFAULT_KEYWORDS_CONTENT = """\
 # Claude Monitor – keyword tracking list
 # One keyword per line.  Lines starting with # are comments.
-# Example:
-#   unreal
-#   python
-#   blueprint
+# These defaults track common Claude Code development topics.
+# Edit to match YOUR projects and workflows — or clear the file to hide
+# the keyword panel entirely.
+
+python
+javascript
+typescript
+debugging
+refactor
+test
+git
+api
+database
+documentation
 """
 
 
@@ -61,6 +71,9 @@ def load_keywords(cli_keywords: Optional[str] = None) -> List[str]:
     """
     if cli_keywords:
         return [k.strip().lower() for k in cli_keywords.split(",") if k.strip()]
+
+    # Auto-create the file with defaults on first run
+    ensure_keywords_file()
 
     if _KEYWORDS_FILE.exists():
         try:

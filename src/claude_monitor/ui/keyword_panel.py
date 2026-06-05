@@ -1,35 +1,44 @@
 """Keyword analytics panel for Claude Monitor.
 
-Renders a Rich Panel+Table showing per-keyword usage stats
-(conversations, mentions, tokens, cost, % of total).
+Returns a list of Rich renderables (Rule + Table + Rule) instead of a Panel
+so it works correctly inside a Live display on all terminals, including old
+Windows PowerShell.
 """
 
 from __future__ import annotations
 
-from typing import List
+from typing import Any, List
 
-from rich.panel import Panel
+from rich.rule import Rule
 from rich.table import Table
 from rich.text import Text
 
-from claude_monitor.data.keyword_analyzer import KeywordStats
+from claude_monitor.data.keyword_analyzer import KeywordStats, _KEYWORDS_FILE
 from claude_monitor.terminal.themes import get_cost_style
 
 
 class KeywordPanel:
-    """Renders the keyword analytics panel as a Rich renderable."""
+    """Renders the keyword analytics section as a list of Rich renderables."""
 
     SPARKLINE_CHARS = "▁▂▃▄▅▆▇█"
 
-    def render(self, stats: List[KeywordStats]) -> Panel:
-        """Build the keyword panel renderable.
+    def render(self, stats: List[KeywordStats]) -> List[Any]:
+        """Build the keyword analytics section renderables.
+
+        Returns a list that can be directly :meth:`list.extend`-ed into the
+        screen buffer — no outer Panel wrapper, so it renders correctly in
+        a Rich ``Live`` display on Windows PowerShell.
 
         Args:
-            stats: List of KeywordStats objects (already sorted by cost desc).
+            stats: Pre-sorted :class:`KeywordStats` list (highest cost first).
 
         Returns:
-            A Rich Panel containing a Table.
+            ``[top_rule, table, bottom_rule, ""]``
         """
+        title     = Text("◈  KEYWORD ANALYTICS", style="bold info")
+        top_rule  = Rule(title=title, style="info")
+        bot_rule  = Rule(style="separator")
+
         table = Table(
             box=None,
             show_header=True,
@@ -38,27 +47,26 @@ class KeywordPanel:
             expand=False,
         )
 
-        table.add_column("Keyword", style="info", no_wrap=True, min_width=12)
-        table.add_column("Convos", justify="right", style="value", min_width=6)
-        table.add_column("Mentions", justify="right", style="dim", min_width=8)
-        table.add_column("Tokens", justify="right", style="value", min_width=10)
-        table.add_column("Cost", justify="right", min_width=10)
-        table.add_column("% Cost", justify="right", style="dim", min_width=7)
-        table.add_column("Bar", no_wrap=True, min_width=12)
+        table.add_column("Keyword",  style="info",  no_wrap=True, min_width=12)
+        table.add_column("Convos",   justify="right", style="value",  min_width=6)
+        table.add_column("Mentions", justify="right", style="dim",    min_width=8)
+        table.add_column("Tokens",   justify="right", style="value",  min_width=10)
+        table.add_column("Cost",     justify="right",                  min_width=10)
+        table.add_column("% Cost",   justify="right", style="dim",    min_width=7)
+        table.add_column("Bar",      no_wrap=True,                    min_width=12)
 
         if not stats:
-            table.add_row(
-                "[dim]No keyword matches yet.[/]",
-                "", "", "", "", "", "",
+            # Show a helpful setup hint instead of a blank table
+            hint = (
+                f"[dim]No keyword matches yet.  "
+                f"Add keywords to [bold]{_KEYWORDS_FILE}[/bold][/dim]"
             )
+            table.add_row(hint, "", "", "", "", "", "")
         else:
-            max_cost = stats[0].cost if stats else 1.0
-
             for stat in stats:
                 cost_style = get_cost_style(stat.cost)
-                cost_text = Text(f"${stat.cost:.4f}", style=cost_style)
-
-                bar = self._mini_bar(stat.pct_of_total_cost, max_cost_pct=100.0)
+                cost_text  = Text(f"${stat.cost:.4f}", style=cost_style)
+                bar        = self._mini_bar(stat.pct_of_total_cost)
 
                 table.add_row(
                     f"[bold]#{stat.keyword}[/bold]",
@@ -70,21 +78,16 @@ class KeywordPanel:
                     bar,
                 )
 
-        return Panel(
-            table,
-            title="[bold info]🔍 Keyword Analytics[/bold info]",
-            border_style="info",
-            padding=(0, 1),
-        )
+        return [top_rule, table, bot_rule, ""]
 
     # ── helpers ──────────────────────────────────────────────────────────────
 
     @staticmethod
-    def _mini_bar(pct: float, max_cost_pct: float = 100.0, width: int = 12) -> str:
-        """Render a small inline progress bar for the keyword table."""
-        capped = min(pct, max_cost_pct)
-        filled = int(width * capped / max_cost_pct) if max_cost_pct > 0 else 0
-        empty = width - filled
+    def _mini_bar(pct: float, width: int = 12) -> str:
+        """Render a small inline bar for the keyword table."""
+        capped = min(pct, 100.0)
+        filled = int(width * capped / 100.0) if capped > 0 else 0
+        empty  = width - filled
 
         if pct >= 50:
             style = "cost.high"
@@ -93,6 +96,7 @@ class KeywordPanel:
         else:
             style = "cost.low"
 
-        filled_str = f"[{style}]{'█' * filled}[/]"
-        empty_str = f"[table.border]{'░' * empty}[/]"
-        return filled_str + empty_str
+        return (
+            f"[{style}]{'█' * filled}[/]"
+            f"[table.border]{'░' * empty}[/]"
+        )

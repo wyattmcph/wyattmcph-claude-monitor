@@ -1,5 +1,36 @@
 # Changelog
 
+## [3.3.0] - 2026-06-04
+
+### 🆕 New Features
+
+- **📐 Adaptive Layout**: Display automatically adjusts to terminal size — no overflow or wasted space
+  - **NANO** (< 18 rows): Token bar + cost + burn rate + status — fits in a tiny sliver
+  - **COMPACT** (18–27 rows): Core metrics with predictions, no keyword panel
+  - **STANDARD** (28–37 rows): Full session stats without keyword panel
+  - **FULL** (38+ rows): Everything including keyword analytics panel
+  - Keyword panel is **first section hidden** when terminal shrinks, **last shown** when it grows
+  - Bar widths scale with terminal width: 20 / 30 / 45 chars for narrow / normal / wide terminals
+
+- **🖼️ PiP Popup Window** (`--popup`): Floating always-on-top overlay for multi-monitor / side-by-side
+  - Frameless dark window, draggable by header bar
+  - Three tiers (⊞ cycles nano → compact → full)
+  - 📌 toggles always-on-top pin · ⊿ corner grip for free resize
+  - Defaults to bottom-right corner; works alongside your Claude window
+  - Requires tkinter (bundled on Windows/macOS; `sudo apt install python3-tk` on Linux)
+
+- **🎨 New Icon Set**: Complete visual refresh — all original emoji replaced with geometric Unicode
+  - `◈` cost · `◉` tokens · `▷` messages · `⚡` burn rate · `◆` model · `⏳` time · `✦` predictions · `↗` cost rate · `●` active status
+
+- **🔍 Zero-Config Keyword Analytics**: No setup needed on first run
+  - Keywords file auto-created with 10 common dev topics (python, debugging, git, api…)
+  - Panel shows a helpful config hint when no keywords match yet
+  - Edit `~/.claude-monitor/keywords.txt` to customise; `--keywords "unreal,blueprint"` for one-offs
+  - `--no-show-keywords` hides the panel (preference remembered between runs)
+
+### 🔗 Links
+[3.3.0]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.3.0
+
 ## [3.2.2] - 2026-06-05
 
 ### 🐛 Bug Fixes
