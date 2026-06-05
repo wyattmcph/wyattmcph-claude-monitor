@@ -264,6 +264,15 @@ class SessionDisplayComponent:
             f"[success]{live_dot}[/]"
         )
 
+        # ── Update notice (shown when a newer version is on PyPI) ────────────
+        try:
+            from claude_monitor.utils.update_check import UpdateChecker
+            notice = UpdateChecker.get().notice
+            if notice:
+                screen_buffer.append(f"[dim]◌ {notice}[/]")
+        except Exception:
+            pass
+
         # ── Keyword analytics panel (FULL tier only) ──────────────────────────
         if keyword_stats is not None and layout.show_keywords:
             from claude_monitor.ui.keyword_panel import KeywordPanel

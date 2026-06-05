@@ -104,6 +104,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         except Exception:
             pass  # never crash startup over this
 
+        # Background PyPI update check (daemon thread, never blocks)
+        try:
+            from claude_monitor.utils.update_check import UpdateChecker
+            UpdateChecker.get().start()
+        except Exception:
+            pass
+
         if settings.log_file:
             setup_logging(settings.log_level, settings.log_file, disable_console=True)
         else:

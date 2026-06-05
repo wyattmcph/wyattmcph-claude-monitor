@@ -53,9 +53,12 @@ class DisplayController:
         # Sparkline: rolling buffer of recent burn-rate samples (up to 20 points)
         self._burn_rate_history: Deque[float] = deque(maxlen=20)
 
-        # Keyword analytics cache (refreshed each data update)
+        # Keyword analytics cache
         self._keyword_stats: Optional[List[Any]] = None
         self._keyword_analyzer: Optional[Any] = None
+        # Rate-limit keyword re-analysis to once every 30 seconds
+        self._last_keyword_refresh: float = 0.0
+        self._keyword_refresh_interval: float = 30.0
 
     def _extract_session_data(self, active_block: Dict[str, Any]) -> Dict[str, Any]:
         """Extract basic session data from active block."""
@@ -485,6 +488,8 @@ class DisplayController:
             cli_keywords: Raw comma-separated keyword string from --keywords flag.
         """
         try:
+            import time as _time
+
             from claude_monitor.data.keyword_analyzer import (
                 KeywordAnalyzer,
                 load_keywords,
@@ -494,6 +499,13 @@ class DisplayController:
             if not keywords:
                 self._keyword_stats = None
                 return
+
+            # Skip the scan if we refreshed recently (files are mtime-cached
+            # inside KeywordAnalyzer anyway, but avoid even the glob + stat
+            # calls on every render tick).
+            now = _time.monotonic()
+            if now - self._last_keyword_refresh < self._keyword_refresh_interval:
+                return   # use cached self._keyword_stats
 
             # Derive data path (same logic as cli/main.py)
             data_path_str = getattr(args, "data_path", None)
@@ -508,6 +520,7 @@ class DisplayController:
                 self._keyword_analyzer = KeywordAnalyzer(data_path_str)
 
             self._keyword_stats = self._keyword_analyzer.analyze(keywords)
+            self._last_keyword_refresh = now
 
         except Exception as exc:
             logger = logging.getLogger(__name__)

@@ -5,28 +5,29 @@ token usage and cost statistics per keyword.
 
 Config file: ~/.claude-monitor/keywords.txt  (one keyword per line, # = comment)
 CLI override: --keywords "unreal,python,git"
+
+Performance note: file contents are cached by modification time so only
+changed or new files are re-parsed on subsequent calls.
 """
 
 import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from claude_monitor.core.models import CostMode
 from claude_monitor.core.pricing import PricingCalculator
 
 logger = logging.getLogger(__name__)
 
-# Default config file location (same dir as last_used.json)
 _KEYWORDS_FILE = Path.home() / ".claude-monitor" / "keywords.txt"
 
 _DEFAULT_KEYWORDS_CONTENT = """\
-# Claude Monitor – keyword tracking list
-# One keyword per line.  Lines starting with # are comments.
+# Claude Monitor - keyword tracking list
+# One keyword per line. Lines starting with # are comments.
 # These defaults track common Claude Code development topics.
-# Edit to match YOUR projects and workflows — or clear the file to hide
-# the keyword panel entirely.
+# Edit to match your projects and workflows.
 
 python
 javascript
@@ -54,9 +55,7 @@ class KeywordStats:
     pct_of_total_tokens: float = 0.0
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Config helpers
-# ──────────────────────────────────────────────────────────────────────────────
+# ── Config helpers ─────────────────────────────────────────────────────────────
 
 def load_keywords(cli_keywords: Optional[str] = None) -> List[str]:
     """Return the active keyword list.
@@ -78,12 +77,11 @@ def load_keywords(cli_keywords: Optional[str] = None) -> List[str]:
     if _KEYWORDS_FILE.exists():
         try:
             lines = _KEYWORDS_FILE.read_text(encoding="utf-8").splitlines()
-            keywords = [
+            return [
                 ln.strip().lower()
                 for ln in lines
                 if ln.strip() and not ln.startswith("#")
             ]
-            return keywords
         except Exception as exc:
             logger.warning("Failed to read keywords file %s: %s", _KEYWORDS_FILE, exc)
 
@@ -91,14 +89,10 @@ def load_keywords(cli_keywords: Optional[str] = None) -> List[str]:
 
 
 def save_keywords(keywords: List[str]) -> None:
-    """Persist a keyword list to the config file.
-
-    Args:
-        keywords: List of keywords to save.
-    """
+    """Persist a keyword list to the config file."""
     try:
         _KEYWORDS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        content = "# Claude Monitor – keyword tracking\n" + "\n".join(keywords) + "\n"
+        content = "# Claude Monitor - keyword tracking\n" + "\n".join(keywords) + "\n"
         _KEYWORDS_FILE.write_text(content, encoding="utf-8")
     except Exception as exc:
         logger.warning("Failed to save keywords to %s: %s", _KEYWORDS_FILE, exc)
@@ -114,29 +108,29 @@ def ensure_keywords_file() -> None:
             logger.debug("Could not create default keywords file: %s", exc)
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Analyzer
-# ──────────────────────────────────────────────────────────────────────────────
+# ── Analyzer ───────────────────────────────────────────────────────────────────
 
 class KeywordAnalyzer:
-    """Scan JSONL conversation files and produce per-keyword usage stats."""
+    """Scan JSONL conversation files and produce per-keyword usage stats.
+
+    File contents are cached by modification time. Only files that have
+    changed since the last call are re-parsed, so repeated calls are fast
+    even on large conversation histories.
+    """
 
     def __init__(self, data_path: str) -> None:
-        """Initialize with the Claude projects data directory.
-
-        Args:
-            data_path: Path to ~/.claude/projects (or equivalent).
-        """
         self.data_path = Path(data_path).expanduser()
-        self._pricing = PricingCalculator()
+        self._pricing  = PricingCalculator()
+        # path -> (mtime, per-file session dict)
+        self._file_cache: Dict[Path, Tuple[float, Dict]] = {}
 
-    # ── public API ──────────────────────────────────────────────────────────
+    # ── Public API ─────────────────────────────────────────────────────────────
 
     def analyze(self, keywords: List[str]) -> List[KeywordStats]:
         """Return per-keyword stats across all conversations.
 
         Args:
-            keywords: List of keywords to search for (case-insensitive).
+            keywords: Keywords to search for (case-insensitive).
 
         Returns:
             List of KeywordStats sorted by cost descending.
@@ -144,10 +138,9 @@ class KeywordAnalyzer:
         if not keywords:
             return []
 
-        sessions = self._build_session_map()
-
+        sessions    = self._build_session_map()
         total_tokens = sum(s["tokens"] for s in sessions.values())
-        total_cost = sum(s["cost"] for s in sessions.values())
+        total_cost   = sum(s["cost"]   for s in sessions.values())
 
         stats: List[KeywordStats] = []
         for kw in keywords:
@@ -157,8 +150,8 @@ class KeywordAnalyzer:
                 continue
 
             kw_tokens = sum(s["tokens"] for s in matching)
-            kw_cost = sum(s["cost"] for s in matching)
-            mentions = sum(s["text"].count(kw_lower) for s in matching)
+            kw_cost   = sum(s["cost"]   for s in matching)
+            mentions  = sum(s["text"].count(kw_lower) for s in matching)
 
             stats.append(
                 KeywordStats(
@@ -178,27 +171,56 @@ class KeywordAnalyzer:
 
         return sorted(stats, key=lambda x: x.cost, reverse=True)
 
-    # ── internals ────────────────────────────────────────────────────────────
+    # ── Session map (mtime-cached) ─────────────────────────────────────────────
 
     def _build_session_map(self) -> Dict[str, Dict]:
-        """Scan all JSONL files and build a per-session summary.
+        """Merge per-file session caches into one map.
 
-        Returns:
-            Dict mapping sessionId -> {text, tokens, cost}.
+        For each JSONL file:
+          - If the file is in the cache and its mtime hasn't changed, use the
+            cached data directly.
+          - Otherwise parse the file, cache the result, and use it.
+
+        Deleted files are pruned from the cache automatically.
         """
-        sessions: Dict[str, Dict] = {}
-
         if not self.data_path.exists():
-            return sessions
+            return {}
 
-        jsonl_files = list(self.data_path.rglob("*.jsonl"))
+        jsonl_files   = list(self.data_path.rglob("*.jsonl"))
+        current_paths = set(jsonl_files)
+
+        # Prune deleted files
+        for removed in set(self._file_cache) - current_paths:
+            del self._file_cache[removed]
+
+        merged: Dict[str, Dict] = {}
+
         for file_path in jsonl_files:
-            self._process_file(file_path, sessions)
+            try:
+                mtime = file_path.stat().st_mtime
+            except OSError:
+                continue
 
-        return sessions
+            cached = self._file_cache.get(file_path)
+            if cached and cached[0] == mtime:
+                file_sessions = cached[1]
+            else:
+                file_sessions: Dict[str, Dict] = {}
+                self._parse_file(file_path, file_sessions)
+                self._file_cache[file_path] = (mtime, file_sessions)
 
-    def _process_file(self, file_path: Path, sessions: Dict) -> None:
-        """Read one JSONL file and accumulate data into sessions."""
+            # Merge this file's sessions into the global map
+            for sid, sdata in file_sessions.items():
+                if sid not in merged:
+                    merged[sid] = {"text": "", "tokens": 0, "cost": 0.0}
+                merged[sid]["text"]   += sdata["text"]
+                merged[sid]["tokens"] += sdata["tokens"]
+                merged[sid]["cost"]   += sdata["cost"]
+
+        return merged
+
+    def _parse_file(self, file_path: Path, sessions: Dict) -> None:
+        """Parse one JSONL file into a caller-supplied sessions dict."""
         try:
             with open(file_path, encoding="utf-8") as fh:
                 for line in fh:
@@ -211,6 +233,10 @@ class KeywordAnalyzer:
                         continue
         except Exception as exc:
             logger.debug("Failed to read %s: %s", file_path, exc)
+
+    # Legacy alias kept for any external callers
+    def _process_file(self, file_path: Path, sessions: Dict) -> None:
+        self._parse_file(file_path, sessions)
 
     def _process_entry(self, entry: Dict, sessions: Dict) -> None:
         """Process one JSON entry and update the sessions map."""
@@ -237,7 +263,7 @@ class KeywordAnalyzer:
             if not usage:
                 return
 
-            model: str = msg.get("model", "unknown") or "unknown"
+            model: str  = msg.get("model", "unknown") or "unknown"
             input_t: int = usage.get("input_tokens", 0) or 0
             output_t: int = usage.get("output_tokens", 0) or 0
             cache_create: int = (
@@ -263,7 +289,7 @@ class KeywordAnalyzer:
                 )
                 sessions[session_id]["cost"] += cost
             except Exception as exc:
-                logger.debug("Cost calculation failed for model %s: %s", model, exc)
+                logger.debug("Cost calc failed for %s: %s", model, exc)
 
     @staticmethod
     def _extract_user_text(entry: Dict) -> str:

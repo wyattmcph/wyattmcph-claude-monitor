@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.3.3] - 2026-06-05
+
+### Added
+
+- **Update notice**: When a newer version is available on PyPI a quiet line appears below the status bar showing the version number and the upgrade command. The check runs in a background thread at startup and never blocks or crashes if the network is unavailable.
+
+### Improved
+
+- **Keyword scan performance**: JSONL files are now cached by modification time inside `KeywordAnalyzer`. On repeat runs, only files that have actually changed are re-parsed. The display controller also rate-limits keyword analysis to once every 30 seconds so the glob + stat calls don't run on every render tick.
+
+[3.3.3]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.3.3
+
+---
+
 ## [3.3.2] - 2026-06-04
 
 ### Fixes

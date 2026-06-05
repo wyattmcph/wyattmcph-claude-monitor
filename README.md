@@ -6,8 +6,6 @@
 
 A real-time terminal monitor for Claude Code. Shows token usage, session cost, burn rate, and keyword analytics so you know exactly how you're spending your plan limits.
 
-![Claude Monitor Screenshot](https://raw.githubusercontent.com/wyattmcph/wyattmcph-claude-monitor/main/doc/scnew.png)
-
 Fork of [Maciek-roboblog/Claude-Code-Usage-Monitor](https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor), extended with keyword analytics, an interactive settings menu, adaptive layout, and a floating popup window.
 
 ---
