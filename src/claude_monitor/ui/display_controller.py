@@ -4,9 +4,10 @@ Orchestrates UI components and coordinates display updates.
 """
 
 import logging
+from collections import deque
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Deque, Dict, List, Optional, Tuple
 
 import pytz
 from rich.console import Console, Group, RenderableType
@@ -48,6 +49,13 @@ class DisplayController:
         config_dir = Path.home() / ".claude" / "config"
         config_dir.mkdir(parents=True, exist_ok=True)
         self.notification_manager = NotificationManager(config_dir)
+
+        # Sparkline: rolling buffer of recent burn-rate samples (up to 20 points)
+        self._burn_rate_history: Deque[float] = deque(maxlen=20)
+
+        # Keyword analytics cache (refreshed each data update)
+        self._keyword_stats: Optional[List[Any]] = None
+        self._keyword_analyzer: Optional[Any] = None
 
     def _extract_session_data(self, active_block: Dict[str, Any]) -> Dict[str, Any]:
         """Extract basic session data from active block."""
@@ -208,6 +216,17 @@ class DisplayController:
         Returns:
             Rich renderable for display
         """
+        from claude_monitor.terminal.themes import AnimationState
+
+        # Advance animation frame on every render
+        AnimationState.tick()
+
+        # Keyword analytics – initialise analyzer lazily, refresh on every call
+        animation_level: str = getattr(args, "animation", "subtle")
+        cli_keywords: Optional[str] = getattr(args, "keywords", None)
+
+        self._refresh_keyword_stats(data, args, cli_keywords)
+
         if not data or "blocks" not in data:
             screen_buffer = self.error_display.format_error_screen(
                 args.plan, args.timezone
@@ -267,6 +286,16 @@ class DisplayController:
         if Plans.is_valid_plan(args.plan):
             processed_data["cost_limit_p90"] = cost_limit_p90
             processed_data["messages_limit_p90"] = messages_limit_p90
+
+        # Track burn rate history for sparkline
+        burn_rate_val = processed_data.get("burn_rate", 0.0)
+        if isinstance(burn_rate_val, (int, float)) and burn_rate_val >= 0:
+            self._burn_rate_history.append(float(burn_rate_val))
+
+        # Inject visual/analytics extras
+        processed_data["animation_level"] = animation_level
+        processed_data["burn_rate_history"] = list(self._burn_rate_history)
+        processed_data["keyword_stats"] = self._keyword_stats
 
         try:
             screen_buffer = self.session_display.format_active_session_screen(
@@ -434,6 +463,52 @@ class DisplayController:
             model_distribution[model] = model_percentage
 
         return model_distribution
+
+    def _refresh_keyword_stats(
+        self,
+        data: Dict[str, Any],
+        args: Any,
+        cli_keywords: Optional[str],
+    ) -> None:
+        """Re-run keyword analysis and cache results.
+
+        Runs on every data refresh cycle.  Silently skips on errors so that
+        a bug in keyword scanning never crashes the live display.
+
+        Args:
+            data: Current usage data (used to get data_path indirectly).
+            args: CLI args namespace (must have data_path or we derive it).
+            cli_keywords: Raw comma-separated keyword string from --keywords flag.
+        """
+        try:
+            from claude_monitor.data.keyword_analyzer import (
+                KeywordAnalyzer,
+                load_keywords,
+            )
+
+            keywords = load_keywords(cli_keywords)
+            if not keywords:
+                self._keyword_stats = None
+                return
+
+            # Derive data path (same logic as cli/main.py)
+            data_path_str = getattr(args, "data_path", None)
+            if not data_path_str:
+                from pathlib import Path as _P
+
+                data_path_str = str(_P.home() / ".claude" / "projects")
+
+            if self._keyword_analyzer is None or str(
+                self._keyword_analyzer.data_path
+            ) != str(data_path_str):
+                self._keyword_analyzer = KeywordAnalyzer(data_path_str)
+
+            self._keyword_stats = self._keyword_analyzer.analyze(keywords)
+
+        except Exception as exc:
+            logger = logging.getLogger(__name__)
+            logger.debug("Keyword analysis failed: %s", exc)
+            self._keyword_stats = None
 
     def create_loading_display(
         self,

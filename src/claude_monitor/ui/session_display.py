@@ -62,37 +62,27 @@ class SessionDisplayComponent:
         self.model_usage = ModelUsageBar()
 
     def _render_wide_progress_bar(self, percentage: float) -> str:
-        """Render a wide progress bar (50 chars) using centralized progress bar logic.
+        """Render a wide gradient progress bar (50 chars).
 
         Args:
             percentage: Progress percentage (can be > 100)
 
         Returns:
-            Formatted progress bar string
+            Formatted progress bar string with green→yellow→red gradient.
         """
-        from claude_monitor.terminal.themes import get_cost_style
-
         if percentage < 50:
-            color = "🟢"
+            icon = "🟢"
         elif percentage < 80:
-            color = "🟡"
+            icon = "🟡"
         else:
-            color = "🔴"
+            icon = "🔴"
 
         progress_bar = TokenProgressBar(width=50)
-        bar_style = get_cost_style(percentage)
+        capped = min(percentage, 100.0)
+        filled = progress_bar._calculate_filled_segments(capped, 100.0)
+        filled_bar = progress_bar._render_gradient_bar(filled)
 
-        capped_percentage = min(percentage, 100.0)
-        filled = progress_bar._calculate_filled_segments(capped_percentage, 100.0)
-
-        if percentage >= 100:
-            filled_bar = progress_bar._render_bar(50, filled_style=bar_style)
-        else:
-            filled_bar = progress_bar._render_bar(
-                filled, filled_style=bar_style, empty_style="table.border"
-            )
-
-        return f"{color} [{filled_bar}]"
+        return f"{icon} [{filled_bar}]"
 
     def format_active_session_screen_v2(self, data: SessionDisplayData) -> list[str]:
         """Format complete active session screen using data class.
@@ -150,6 +140,10 @@ class SessionDisplayComponent:
         show_exceed_notification: bool = False,
         show_tokens_will_run_out: bool = False,
         original_limit: int = 0,
+        # ── new visual / analytics kwargs ────────────────────────────────
+        animation_level: str = "subtle",
+        burn_rate_history: "list[float] | None" = None,
+        keyword_stats: "list | None" = None,
         **kwargs,
     ) -> list[str]:
         """Format complete active session screen.
@@ -180,10 +174,21 @@ class SessionDisplayComponent:
             List of formatted screen lines
         """
 
+        from claude_monitor.terminal.themes import AnimationState, render_sparkline
+
         screen_buffer = []
 
+        # ── Animated Rich Panel header ────────────────────────────────────
         header_manager = HeaderManager()
-        screen_buffer.extend(header_manager.create_header(plan, timezone))
+        screen_buffer.append(
+            header_manager.create_header_panel(
+                plan=plan,
+                timezone=timezone,
+                animation_frame=AnimationState.get(),
+                animation_level=animation_level,
+            )
+        )
+        screen_buffer.append("")
 
         if plan in ["custom", "pro", "max5", "max20"]:
             from claude_monitor.core.plans import DEFAULT_COST_LIMIT
@@ -252,8 +257,12 @@ class SessionDisplayComponent:
             screen_buffer.append(f"[separator]{'─' * 60}[/]")
 
             velocity_emoji = VelocityIndicator.get_velocity_emoji(burn_rate)
+            sparkline_str = ""
+            if animation_level in ("moderate", "full") and burn_rate_history:
+                spark = render_sparkline(burn_rate_history, width=10)
+                sparkline_str = f"  [dim]{spark}[/]"
             screen_buffer.append(
-                f"🔥 [value]Burn Rate:[/]              [warning]{burn_rate:.1f}[/] [dim]tokens/min[/] {velocity_emoji}"
+                f"🔥 [value]Burn Rate:[/]              [warning]{burn_rate:.1f}[/] [dim]tokens/min[/] {velocity_emoji}{sparkline_str}"
             )
 
             cost_per_min = (
@@ -288,8 +297,12 @@ class SessionDisplayComponent:
             )
 
             velocity_emoji = VelocityIndicator.get_velocity_emoji(burn_rate)
+            sparkline_str = ""
+            if animation_level in ("moderate", "full") and burn_rate_history:
+                spark = render_sparkline(burn_rate_history, width=10)
+                sparkline_str = f"  [dim]{spark}[/]"
             screen_buffer.append(
-                f"🔥 [value]Burn Rate:[/]      [warning]{burn_rate:.1f}[/] [dim]tokens/min[/] {velocity_emoji}"
+                f"🔥 [value]Burn Rate:[/]      [warning]{burn_rate:.1f}[/] [dim]tokens/min[/] {velocity_emoji}{sparkline_str}"
             )
 
             screen_buffer.append(
@@ -327,9 +340,16 @@ class SessionDisplayComponent:
             token_limit,
         )
 
+        live_dot = AnimationState.live_dot(animation_level)
         screen_buffer.append(
-            f"⏰ [dim]{current_time_str}[/] 📝 [success]Active session[/] | [dim]Ctrl+C to exit[/] 🟢"
+            f"⏰ [dim]{current_time_str}[/] 📝 [success]Active session[/] | [dim]Ctrl+C to exit[/] [success]{live_dot}[/]"
         )
+
+        # ── Keyword analytics panel (shown if stats provided) ────────────
+        if keyword_stats is not None:
+            from claude_monitor.ui.keyword_panel import KeywordPanel
+            screen_buffer.append("")
+            screen_buffer.append(KeywordPanel().render(keyword_stats))
 
         return screen_buffer
 
@@ -395,11 +415,22 @@ class SessionDisplayComponent:
         Returns:
             List of formatted screen lines
         """
+        from claude_monitor.terminal.themes import AnimationState
+
+        animation_level = getattr(args, "animation", "subtle") if args else "subtle"
 
         screen_buffer = []
 
         header_manager = HeaderManager()
-        screen_buffer.extend(header_manager.create_header(plan, timezone))
+        screen_buffer.append(
+            header_manager.create_header_panel(
+                plan=plan,
+                timezone=timezone,
+                animation_frame=AnimationState.get(),
+                animation_level=animation_level,
+            )
+        )
+        screen_buffer.append("")
 
         empty_token_bar = self.token_progress.render(0.0)
         screen_buffer.append(f"📊 [value]Token Usage:[/]    {empty_token_bar}")

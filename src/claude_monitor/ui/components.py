@@ -95,10 +95,19 @@ class ErrorDisplayComponent:
         Returns:
             List of formatted error screen lines
         """
+        from claude_monitor.terminal.themes import AnimationState
+
         screen_buffer = []
 
         header_manager = HeaderManager()
-        screen_buffer.extend(header_manager.create_header(plan, timezone))
+        screen_buffer.append(
+            header_manager.create_header_panel(
+                plan=plan, timezone=timezone,
+                animation_frame=AnimationState.get(),
+                animation_level="subtle",
+            )
+        )
+        screen_buffer.append("")
 
         screen_buffer.append("[error]Failed to get usage data[/]")
         screen_buffer.append("")
@@ -132,10 +141,19 @@ class LoadingScreenComponent:
         Returns:
             List of loading screen lines
         """
+        from claude_monitor.terminal.themes import AnimationState
+
         screen_buffer = []
 
         header_manager = HeaderManager()
-        screen_buffer.extend(header_manager.create_header(plan, timezone))
+        screen_buffer.append(
+            header_manager.create_header_panel(
+                plan=plan, timezone=timezone,
+                animation_frame=AnimationState.get(),
+                animation_level="subtle",
+            )
+        )
+        screen_buffer.append("")
 
         screen_buffer.append("")
         screen_buffer.append("[info]⏳ Loading...[/]")

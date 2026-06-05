@@ -658,6 +658,88 @@ def get_velocity_indicator(burn_rate: float) -> Dict[str, str]:
     return {"emoji": str(very_fast["emoji"]), "label": str(very_fast["label"])}
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Animation state
+# ──────────────────────────────────────────────────────────────────────────────
+
+class AnimationState:
+    """Thread-safe global animation frame counter.
+
+    Incremented once per display render cycle so that all animated elements
+    in a single render share the same frame index.
+    """
+
+    _frame: int = 0
+    _lock: threading.Lock = threading.Lock()
+
+    # Subtle: slow pulse ●◉○◉  (period ~4 frames)
+    LIVE_FRAMES_SUBTLE: List[str] = ["●", "◉", "○", "◉"]
+    # Moderate: braille spinner + live dot
+    LIVE_FRAMES_MODERATE: List[str] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    # Full: same spinner, just used everywhere
+    LIVE_FRAMES_FULL: List[str] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
+    @classmethod
+    def tick(cls) -> int:
+        """Advance frame counter and return new value."""
+        with cls._lock:
+            cls._frame = (cls._frame + 1) % 1000
+            return cls._frame
+
+    @classmethod
+    def get(cls) -> int:
+        """Return current frame without advancing."""
+        return cls._frame
+
+    @classmethod
+    def live_dot(cls, animation_level: str = "subtle") -> str:
+        """Return the live indicator string for the current frame.
+
+        Args:
+            animation_level: One of 'none', 'subtle', 'moderate', 'full'.
+
+        Returns:
+            A single Unicode character (or empty if animation is off).
+        """
+        if animation_level == "none":
+            return "●"
+        if animation_level in ("moderate", "full"):
+            frames = cls.LIVE_FRAMES_MODERATE
+        else:
+            frames = cls.LIVE_FRAMES_SUBTLE
+        return frames[cls._frame % len(frames)]
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Sparkline helper
+# ──────────────────────────────────────────────────────────────────────────────
+
+_SPARKLINE_CHARS = "▁▂▃▄▅▆▇█"
+
+
+def render_sparkline(values: List[float], width: int = 10) -> str:
+    """Render a mini sparkline from a list of float values.
+
+    Args:
+        values: Recent values (latest at the end).
+        width: Number of characters in the sparkline.
+
+    Returns:
+        Unicode sparkline string of exactly *width* characters.
+    """
+    if not values:
+        return "─" * width
+
+    # Use last *width* values, pad with zeros on the left if short
+    vals = list(values[-width:])
+    if len(vals) < width:
+        vals = [0.0] * (width - len(vals)) + vals
+
+    max_v = max(vals) if max(vals) > 0 else 1.0
+    chars = [_SPARKLINE_CHARS[min(7, int(v / max_v * 8))] for v in vals]
+    return "".join(chars)
+
+
 # Global theme manager instance
 _theme_manager: ThemeManager = ThemeManager()
 

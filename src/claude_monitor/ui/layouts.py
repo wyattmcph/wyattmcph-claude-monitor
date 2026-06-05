@@ -7,7 +7,20 @@ This module consolidates layout management functionality including:
 
 from __future__ import annotations
 
-from typing import Final, Sequence
+from typing import Any, Final, Optional, Sequence
+
+from rich.align import Align
+from rich.panel import Panel
+from rich.text import Text
+
+
+# Plan → border colour mapping so the header border matches the plan tier
+_PLAN_BORDER: dict[str, str] = {
+    "pro": "plan.pro",
+    "max5": "plan.max5",
+    "max20": "plan.max20",
+    "custom": "plan.custom",
+}
 
 
 class HeaderManager:
@@ -23,28 +36,73 @@ class HeaderManager:
         self.separator_char: str = self.DEFAULT_SEPARATOR_CHAR
         self.separator_length: int = self.DEFAULT_SEPARATOR_LENGTH
 
+    # ── Rich Panel header (new) ────────────────────────────────────────────
+
+    def create_header_panel(
+        self,
+        plan: str = "pro",
+        timezone: str = "Europe/Warsaw",
+        animation_frame: int = 0,
+        animation_level: str = "subtle",
+    ) -> Panel:
+        """Create a visually rich header Panel with animated LIVE indicator.
+
+        Args:
+            plan: Current plan name.
+            timezone: Display timezone string.
+            animation_frame: Current global animation frame index.
+            animation_level: One of 'none', 'subtle', 'moderate', 'full'.
+
+        Returns:
+            A Rich Panel that can be placed directly in a render Group.
+        """
+        from claude_monitor.terminal.themes import AnimationState
+
+        live_dot = AnimationState.live_dot(animation_level)
+
+        # Build subtitle line: plan badge | timezone | LIVE dot
+        subtitle = Text(justify="center")
+        plan_style = _PLAN_BORDER.get(plan.lower(), "plan.pro")
+        subtitle.append(f" {plan.upper()} ", style=f"bold {plan_style}")
+        subtitle.append(" │ ", style="separator")
+        subtitle.append(timezone, style="dim")
+        subtitle.append(" │ ", style="separator")
+        if animation_level == "none":
+            subtitle.append("● LIVE", style="success")
+        else:
+            subtitle.append(f"{live_dot} LIVE", style="success")
+
+        border_style = _PLAN_BORDER.get(plan.lower(), "header")
+
+        return Panel(
+            Align.center(subtitle),
+            title=Text(
+                "✦  CLAUDE CODE USAGE MONITOR  ✦",
+                style="bold header",
+            ),
+            border_style=border_style,
+            padding=(0, 2),
+        )
+
+    # ── Legacy string-buffer header (kept for backward compat) ────────────
+
     def create_header(
         self, plan: str = "pro", timezone: str = "Europe/Warsaw"
-    ) -> list[str]:
-        """Create stylized header with sparkles.
+    ) -> list[Any]:
+        """Create header using the new Panel style.
+
+        Returns a one-element list containing a Rich Panel so that it can
+        be inserted directly into the existing screen_buffer lists.
 
         Args:
             plan: Current plan name
             timezone: Display timezone
 
         Returns:
-            List of formatted header lines
+            List containing a single Rich Panel object followed by an empty line.
         """
-        sparkles: str = self.DEFAULT_SPARKLES
-        title: str = "CLAUDE CODE USAGE MONITOR"
-        separator: str = self.separator_char * self.separator_length
-
-        return [
-            f"[header]{sparkles}[/] [header]{title}[/] [header]{sparkles}[/]",
-            f"[table.border]{separator}[/]",
-            f"[ {plan.lower()} | {timezone.lower()} ]",
-            "",
-        ]
+        panel = self.create_header_panel(plan=plan, timezone=timezone)
+        return [panel, ""]
 
 
 class ScreenManager:

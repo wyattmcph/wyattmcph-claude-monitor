@@ -93,6 +93,51 @@ class BaseProgressBar(ABC):
         bounded_percentage: float = max(0, min(percentage, max_value))
         return int(self.width * bounded_percentage / max_value)
 
+    def _render_gradient_bar(
+        self,
+        filled: int,
+        filled_char: str = "█",
+        empty_char: str = "░",
+        empty_style: str = "table.border",
+        green_end_frac: float = 0.5,
+        yellow_end_frac: float = 0.8,
+    ) -> str:
+        """Render a progress bar with a green→yellow→red colour gradient.
+
+        The filled region is split into up to three colour bands based on
+        fractional positions in the *total* bar width (not the filled amount).
+
+        Args:
+            filled: Number of filled segments.
+            filled_char: Character to use for filled segments.
+            empty_char: Character to use for empty segments.
+            empty_style: Rich style for the empty portion.
+            green_end_frac: Bar fraction where green transitions to yellow.
+            yellow_end_frac: Bar fraction where yellow transitions to red.
+
+        Returns:
+            Formatted Rich markup string.
+        """
+        green_end = int(self.width * green_end_frac)
+        yellow_end = int(self.width * yellow_end_frac)
+
+        green_filled = max(0, min(filled, green_end))
+        yellow_filled = max(0, min(filled - green_end, yellow_end - green_end))
+        red_filled = max(0, filled - yellow_end)
+        empty = self.width - filled
+
+        parts: list[str] = []
+        if green_filled > 0:
+            parts.append(f"[cost.low]{filled_char * green_filled}[/]")
+        if yellow_filled > 0:
+            parts.append(f"[cost.medium]{filled_char * yellow_filled}[/]")
+        if red_filled > 0:
+            parts.append(f"[cost.high]{filled_char * red_filled}[/]")
+        if empty > 0:
+            parts.append(f"[{empty_style}]{empty_char * empty}[/]")
+
+        return "".join(parts)
+
     def _render_bar(
         self,
         filled: int,
@@ -183,7 +228,7 @@ class TokenProgressBar(BaseProgressBar):
     LOW_USAGE_ICON: Final[str] = "🟢"
 
     def render(self, percentage: float) -> str:
-        """Render token usage progress bar.
+        """Render token usage progress bar with a gradient fill.
 
         Args:
             percentage: Usage percentage (can be > 100)
@@ -193,22 +238,8 @@ class TokenProgressBar(BaseProgressBar):
         """
         filled: int = self._calculate_filled_segments(min(percentage, 100.0))
 
-        color_thresholds: list[tuple[float, str]] = [
-            (self.HIGH_USAGE_THRESHOLD, self.HIGH_USAGE_STYLE),
-            (self.MEDIUM_USAGE_THRESHOLD, self.MEDIUM_USAGE_STYLE),
-            (self.LOW_USAGE_THRESHOLD, self.LOW_USAGE_STYLE),
-        ]
-
-        filled_style: str = self._get_color_style_by_threshold(
-            percentage, color_thresholds
-        )
-        bar: str = self._render_bar(
-            filled,
-            filled_style=filled_style,
-            empty_style=self.BORDER_STYLE
-            if percentage < self.HIGH_USAGE_THRESHOLD
-            else self.MEDIUM_USAGE_STYLE,
-        )
+        # Use gradient bar for richer visuals
+        bar: str = self._render_gradient_bar(filled)
 
         if percentage >= self.HIGH_USAGE_THRESHOLD:
             icon: str = self.HIGH_USAGE_ICON

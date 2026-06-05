@@ -34,6 +34,7 @@ class LastUsedParams:
                 "refresh_rate": settings.refresh_rate,
                 "reset_hour": settings.reset_hour,
                 "view": settings.view,
+                "animation": getattr(settings, "animation", "subtle"),
                 "timestamp": datetime.now().isoformat(),
             }
 
@@ -138,6 +139,19 @@ class Settings(BaseSettings):
         description="Display theme (light, dark, classic, auto)",
     )
 
+    animation: Literal["none", "subtle", "moderate", "full"] = Field(
+        default="subtle",
+        description="Animation level (none, subtle, moderate, full)",
+    )
+
+    keywords: Optional[str] = Field(
+        default=None,
+        description=(
+            "Comma-separated keywords to track analytics for "
+            "(e.g. 'unreal,python,git'). Overrides ~/.claude-monitor/keywords.txt"
+        ),
+    )
+
     custom_limit_tokens: Optional[int] = Field(
         default=None, gt=0, description="Token limit for custom plan"
     )
@@ -209,6 +223,20 @@ class Settings(BaseSettings):
                 return v_lower
             raise ValueError(
                 f"Invalid theme: {v}. Must be one of: {', '.join(valid_themes)}"
+            )
+        return v
+
+    @field_validator("animation", mode="before")
+    @classmethod
+    def validate_animation(cls, v: Any) -> str:
+        """Validate and normalize animation level."""
+        if isinstance(v, str):
+            v_lower = v.lower()
+            valid = ["none", "subtle", "moderate", "full"]
+            if v_lower in valid:
+                return v_lower
+            raise ValueError(
+                f"Invalid animation level: {v}. Must be one of: {', '.join(valid)}"
             )
         return v
 
@@ -350,5 +378,7 @@ class Settings(BaseSettings):
         args.log_level = self.log_level
         args.log_file = str(self.log_file) if self.log_file else None
         args.version = self.version
+        args.animation = self.animation
+        args.keywords = self.keywords
 
         return args
