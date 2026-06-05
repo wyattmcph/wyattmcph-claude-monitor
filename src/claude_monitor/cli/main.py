@@ -78,6 +78,19 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"claude-monitor {__version__}")
         return 0
 
+    # Standalone config menu — no monitoring needed
+    if "--config" in argv or "config" in argv:
+        try:
+            settings = Settings.load_with_last_used(
+                [a for a in argv if a not in ("--config", "config")]
+            )
+            args = settings.to_namespace()
+        except Exception:
+            args = None
+        from claude_monitor.ui.config_menu import run_config_menu
+        run_config_menu(args)
+        return 0
+
     try:
         settings = Settings.load_with_last_used(argv)
 
@@ -239,14 +252,50 @@ def _run_monitoring(args: argparse.Namespace) -> None:
             if not orchestrator.wait_for_initial_data(timeout=10.0):
                 logger.warning("Timeout waiting for initial data")
 
-            # Main loop - live display is already active
-            # Use signal.pause() for more efficient waiting
+            # Main loop — key-polling replaces signal.pause() / sleep loop
+            # so keyboard shortcuts work on every platform.
+            from claude_monitor.ui.key_handler import KeyHandler
+
+            key_handler = KeyHandler()
+            key_handler.start()
+            _ANIM_LEVELS = ["none", "subtle", "moderate", "full"]
             try:
-                signal.pause()
-            except AttributeError:
-                # Fallback for Windows which doesn't support signal.pause()
                 while True:
-                    time.sleep(1)
+                    key = key_handler.get_key()
+                    if key == "m":
+                        # ── Open settings menu ──────────────────────────────
+                        key_handler.pause()
+                        try:
+                            with contextlib.suppress(Exception):
+                                live_display.__exit__(None, None, None)
+                            live_display_active = False
+
+                            from claude_monitor.ui.config_menu import ConfigMenu
+                            menu_console = get_themed_console(
+                                force_theme=getattr(args, "theme", "auto").lower()
+                            )
+                            menu = ConfigMenu(args=args, console=menu_console)
+                            menu.run()
+
+                            with contextlib.suppress(Exception):
+                                live_display.__enter__()
+                            live_display_active = True
+                        finally:
+                            key_handler.resume()
+
+                    elif key == "k":
+                        # ── Toggle keyword panel ────────────────────────────
+                        args.show_keywords = not getattr(args, "show_keywords", True)
+
+                    elif key == "a":
+                        # ── Cycle animation level ───────────────────────────
+                        cur = getattr(args, "animation", "subtle")
+                        idx = _ANIM_LEVELS.index(cur) if cur in _ANIM_LEVELS else 1
+                        args.animation = _ANIM_LEVELS[(idx + 1) % len(_ANIM_LEVELS)]
+
+                    time.sleep(0.05)
+            finally:
+                key_handler.stop()
         finally:
             # Stop monitoring first
             if "orchestrator" in locals():

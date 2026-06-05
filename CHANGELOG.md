@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.3.1] - 2026-06-04
+
+### 🆕 New Features
+
+- **⚙️ Interactive Settings Menu**: Change any setting without touching the command line
+  - Press **`m`** while the monitor is running to open the full settings panel
+  - Or run `claude-monitor --config` / `cmonitor config` to open it standalone
+  - Change plan, animation level, theme, timezone, refresh rate — all with numbered options
+  - Edit your keywords file directly from the menu (opens in your system editor)
+  - Quick-add a keyword without opening the file
+  - All changes apply **immediately** to the running session and are **persisted** to `last_used.json`
+  - Reset to factory defaults with `[r]`
+
+- **⌨️ Live Keyboard Shortcuts** (while monitor is running):
+  - **`m`** — open settings menu
+  - **`k`** — toggle keyword analytics panel on/off instantly
+  - **`a`** — cycle animation level (none → subtle → moderate → full)
+  - Shortcut hints shown in the status bar at the bottom of the display
+
+### 🔗 Links
+[3.3.1]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.3.1
+
 ## [3.3.0] - 2026-06-04
 
 ### 🆕 New Features
