@@ -614,7 +614,7 @@ class LiveDisplayManager:
             console=display_console,
             refresh_per_second=refresh_per_second,
             auto_refresh=auto_refresh,
-            vertical_overflow="visible",  # Prevent screen scrolling
+            vertical_overflow="crop",  # crop = clears+rewrites in place; "visible" caused ghost headers on resize
         )
 
         return self._live_context

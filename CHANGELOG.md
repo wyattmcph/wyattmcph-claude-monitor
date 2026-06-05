@@ -1,5 +1,16 @@
 # Changelog
 
+## [3.4.2] - 2026-06-05
+
+### Fixed
+
+- **Duplicate header on window resize**: `vertical_overflow="visible"` in Rich's Live display caused previous renders to remain visible when the window was resized, stacking ghost headers. Changed to `vertical_overflow="crop"` which clears and rewrites in place on every render.
+- **Box characters instead of icons**: The geometric Unicode icon set (◈ ◉ ▷ ⏳ ✦ ↗ ◌) is not present in Consolas or Courier New — the fonts used by the Windows console when running as a standalone executable. All icons replaced with characters that render correctly in every terminal: `$` `%` `>` `~` `+` `-` `*` `^`. Applies to metric labels, headers, keyword panel, config menu, and popup window.
+
+[3.4.2]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.4.2
+
+---
+
 ## [3.4.1] - 2026-06-05
 
 ### Fixed

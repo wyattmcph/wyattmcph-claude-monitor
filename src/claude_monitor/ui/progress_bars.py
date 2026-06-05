@@ -222,10 +222,10 @@ class TokenProgressBar(BaseProgressBar):
     LOW_USAGE_STYLE: Final[str] = "cost.low"
     BORDER_STYLE: Final[str] = "table.border"
 
-    # Icon constants
-    HIGH_USAGE_ICON: Final[str] = "🔴"
-    MEDIUM_USAGE_ICON: Final[str] = "🟡"
-    LOW_USAGE_ICON: Final[str] = "🟢"
+    # Icon constants — ASCII so they render in any console font
+    HIGH_USAGE_ICON: Final[str] = "!!"
+    MEDIUM_USAGE_ICON: Final[str] = "! "
+    LOW_USAGE_ICON: Final[str] = "  "
 
     def render(self, percentage: float) -> str:
         """Render token usage progress bar with a gradient fill.
@@ -278,7 +278,7 @@ class TimeProgressBar(BaseProgressBar):
         )
 
         remaining_time = format_time(max(0, total_minutes - elapsed_minutes))
-        return f"⏳ [{bar}] {remaining_time}"
+        return f"[{bar}] {remaining_time}"
 
 
 class ModelUsageBar(BaseProgressBar):
@@ -295,12 +295,12 @@ class ModelUsageBar(BaseProgressBar):
         """
         if not per_model_stats:
             empty_bar = self._render_bar(0, empty_style="table.border")
-            return f"◆ [{empty_bar}] No model data"
+            return f"[{empty_bar}] No model data"
 
         model_names = list(per_model_stats.keys())
         if not model_names:
             empty_bar = self._render_bar(0, empty_style="table.border")
-            return f"◆ [{empty_bar}] Empty model stats"
+            return f"[{empty_bar}] Empty model stats"
 
         sonnet_tokens = 0
         opus_tokens = 0
@@ -320,7 +320,7 @@ class ModelUsageBar(BaseProgressBar):
 
         if total_tokens == 0:
             empty_bar = self._render_bar(0, empty_style="table.border")
-            return f"◆ [{empty_bar}] No tokens used"
+            return f"[{empty_bar}] No tokens used"
 
         sonnet_percentage = percentage(sonnet_tokens, total_tokens)
         opus_percentage = percentage(opus_tokens, total_tokens)
@@ -361,4 +361,4 @@ class ModelUsageBar(BaseProgressBar):
         else:
             summary = f"Other {other_percentage:.1f}%"
 
-        return f"◆ [{bar_display}] {summary}"
+        return f"[{bar_display}] {summary}"

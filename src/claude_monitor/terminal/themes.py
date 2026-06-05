@@ -691,8 +691,8 @@ class AnimationState:
     _frame: int = 0
     _lock: threading.Lock = threading.Lock()
 
-    # Subtle: slow pulse ●◉○◉  (period ~4 frames)
-    LIVE_FRAMES_SUBTLE: List[str] = ["●", "◉", "○", "◉"]
+    # Subtle: slow pulse using chars confirmed in Consolas/Courier New
+    LIVE_FRAMES_SUBTLE: List[str] = ["●", "○", "●", "○"]
     # Moderate: braille spinner + live dot
     LIVE_FRAMES_MODERATE: List[str] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
     # Full: same spinner, just used everywhere

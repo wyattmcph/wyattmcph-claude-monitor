@@ -82,7 +82,7 @@ class ConfigMenu:
     # ── Rendering ─────────────────────────────────────────────────────────────
 
     def _render_header(self) -> None:
-        title = Text("✦  CLAUDE MONITOR  ✦  SETTINGS", style="bold")
+        title = Text("  CLAUDE MONITOR  --  SETTINGS  ", style="bold")
         self.console.print(Rule(title=title, style="info"))
         self.console.print()
 
@@ -280,7 +280,7 @@ class ConfigMenu:
                 f"  [dim]Active keywords ({len(active)} total):[/dim]"
             )
             for kw in active[:20]:
-                self.console.print(f"    [value]◈ {kw}[/value]")
+                self.console.print(f"    [value]- {kw}[/value]")
             if len(active) > 20:
                 self.console.print(f"    [dim]… and {len(active) - 20} more[/dim]")
         except Exception:

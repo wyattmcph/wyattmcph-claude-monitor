@@ -154,7 +154,7 @@ class LoadingScreenComponent:
         )
 
         screen_buffer.append("")
-        screen_buffer.append("[info]⏳ Loading...[/]")
+        screen_buffer.append("[info]Loading...[/]")
         screen_buffer.append("")
 
         if custom_message:

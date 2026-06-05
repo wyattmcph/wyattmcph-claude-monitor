@@ -62,7 +62,7 @@ class HeaderManager:
         plan_style = _PLAN_STYLE.get(plan.lower(), "header")
 
         # Top rule with title
-        title = Text("✦  CLAUDE CODE USAGE MONITOR  ✦", style="bold header")
+        title = Text("  CLAUDE CODE USAGE MONITOR  ", style="bold header")
         top_rule = Rule(title=title, style=plan_style)
 
         # Subtitle line: plan badge | timezone | live dot

@@ -24,16 +24,17 @@ from claude_monitor.utils.time_utils import (
 )
 
 # ── Icon set ──────────────────────────────────────────────────────────────────
-# Clean geometric Unicode, replacing the original emoji set.
-_I_COST      = "◈"   # cost bars / cost usage
-_I_TOKENS    = "◉"   # token usage / token count
-_I_MESSAGES  = "▷"   # messages sent
-_I_BURN      = "⚡"   # burn rate
-_I_MODEL     = "◆"   # model distribution
-_I_TIME      = "⏳"   # time to reset
-_I_PREDICT   = "✦"   # predictions (matches header star)
-_I_COSTRATE  = "↗"   # cost rate (trending upward)
-_I_STATUS    = "●"   # active session dot
+# Uses only characters present in Consolas/Courier New so the standalone
+# Windows executable renders correctly in a plain cmd-style console.
+_I_COST      = "$"   # cost bars / cost usage
+_I_TOKENS    = "%"   # token usage / token count
+_I_MESSAGES  = ">"   # messages sent
+_I_BURN      = "~"   # burn rate
+_I_MODEL     = "+"   # model distribution
+_I_TIME      = "-"   # time to reset
+_I_PREDICT   = "*"   # predictions
+_I_COSTRATE  = "^"   # cost rate
+_I_STATUS    = "*"   # active session
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -83,7 +84,7 @@ class SessionDisplayComponent:
         Returns:
             Rich markup string: ``icon [gradient_bar]``.
         """
-        icon = "🟢" if pct < 50 else ("🟡" if pct < 80 else "🔴")
+        icon = "  "  # status conveyed by bar color, not an icon
         bar     = TokenProgressBar(width=width)
         filled  = bar._calculate_filled_segments(min(pct, 100.0), 100.0)
         return f"{icon} [{bar._render_gradient_bar(filled)}]"
@@ -259,7 +260,7 @@ class SessionDisplayComponent:
             key_hints = " "
         screen_buffer.append(
             f"{_I_STATUS} [dim]{current_time_str}[/] "
-            f"◌ [success]Active session[/] |{key_hints}"
+            f"o [success]Active session[/] |{key_hints}"
             f"[dim]Ctrl+C to exit[/] "
             f"[success]{live_dot}[/]"
         )
@@ -269,7 +270,7 @@ class SessionDisplayComponent:
             from claude_monitor.utils.update_check import UpdateChecker
             notice = UpdateChecker.get().notice
             if notice:
-                screen_buffer.append(f"[dim]◌ {notice}[/]")
+                screen_buffer.append(f"[dim]o {notice}[/]")
         except Exception:
             pass
 
@@ -313,7 +314,7 @@ class SessionDisplayComponent:
 
         if plan == "custom":
             screen_buffer.append("")
-            screen_buffer.append("[bold]◈ Session-Based Dynamic Limits[/bold]")
+            screen_buffer.append("[bold]! Session-Based Dynamic Limits[/bold]")
             screen_buffer.append(
                 "[dim]Based on your historical usage patterns when hitting limits (P90)[/dim]"
             )
@@ -491,17 +492,17 @@ class SessionDisplayComponent:
         added = False
         if show_switch_notification and token_limit > original_limit:
             screen_buffer.append(
-                f"◈ [warning]Token limit exceeded ({token_limit:,} tokens)[/]"
+                f"! [warning]Token limit exceeded ({token_limit:,} tokens)[/]"
             )
             added = True
         if show_exceed_notification:
             screen_buffer.append(
-                "◈ [error]You have exceeded the maximum cost limit![/]"
+                "! [error]You have exceeded the maximum cost limit![/]"
             )
             added = True
         if show_tokens_will_run_out:
             screen_buffer.append(
-                "◈ [warning]Cost limit will be exceeded before reset![/]"
+                "! [warning]Cost limit will be exceeded before reset![/]"
             )
             added = True
         if added:
@@ -566,17 +567,17 @@ class SessionDisplayComponent:
                 )
                 screen_buffer.append(
                     f"{_I_STATUS} [dim]{current_time_str}[/] "
-                    f"◌ [info]No active session[/] | [dim]Ctrl+C to exit[/] 🟨"
+                    f"o [info]No active session[/] | [dim]Ctrl+C to exit[/] 🟨"
                 )
             except (pytz.exceptions.UnknownTimeZoneError, AttributeError):
                 screen_buffer.append(
                     f"{_I_STATUS} [dim]--:--:--[/] "
-                    f"◌ [info]No active session[/] | [dim]Ctrl+C to exit[/] 🟨"
+                    f"o [info]No active session[/] | [dim]Ctrl+C to exit[/] 🟨"
                 )
         else:
             screen_buffer.append(
                 f"{_I_STATUS} [dim]--:--:--[/] "
-                f"◌ [info]No active session[/] | [dim]Ctrl+C to exit[/] 🟨"
+                f"o [info]No active session[/] | [dim]Ctrl+C to exit[/] 🟨"
             )
 
         return screen_buffer

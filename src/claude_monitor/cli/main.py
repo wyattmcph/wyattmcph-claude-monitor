@@ -190,7 +190,7 @@ def _plan_first_run_check(
 
     c = _Con()
     c.print()
-    title = _Txt("✦  CLAUDE MONITOR  ✦  QUICK SETUP", style="bold")
+    title = _Txt("  CLAUDE MONITOR  --  QUICK SETUP  ", style="bold")
     c.print(_Rule(title=title, style="#C97A4A"))
     c.print()
     c.print("  [bold]What Claude plan are you on?[/bold]")

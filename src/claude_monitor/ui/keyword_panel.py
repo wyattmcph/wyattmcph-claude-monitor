@@ -35,7 +35,7 @@ class KeywordPanel:
         Returns:
             ``[top_rule, table, bottom_rule, ""]``
         """
-        title     = Text("◈  KEYWORD ANALYTICS", style="bold info")
+        title     = Text("  KEYWORD ANALYTICS  ", style="bold info")
         top_rule  = Rule(title=title, style="info")
         bot_rule  = Rule(style="separator")
 

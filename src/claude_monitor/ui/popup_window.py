@@ -114,7 +114,7 @@ class MonitorPopup:
         hbar.pack_propagate(False)
 
         title_lbl = tk.Label(
-            hbar, text="✦ CLAUDE MONITOR",
+            hbar, text="* CLAUDE MONITOR",
             bg=_BG_HDR, fg=_FG_ACC,
             font=("Consolas", 9, "bold"), anchor="w", padx=8,
         )
@@ -225,7 +225,7 @@ class MonitorPopup:
         self.text.delete("1.0", "end")
 
         if data is None:
-            self._w("  ◌ Connecting...\n", "dim")
+            self._w("  Connecting...\n", "dim")
             self.text.configure(state="disabled")
             return
 
@@ -236,7 +236,7 @@ class MonitorPopup:
         )
 
         if active is None:
-            self._w("  ◌ No active session\n", "dim")
+            self._w("  No active session\n", "dim")
             self._w("  Waiting for Claude activity…\n", "dim")
         else:
             tier_name = _TIERS[self._tier_idx][0]
@@ -265,12 +265,12 @@ class MonitorPopup:
         c_fill, c_empty = _mini_bar(cost_pct, 14)
 
         # ── Always shown ──────────────────────────────────────────────────────
-        self._w("  ◉ Tokens  ", "dim")
+        self._w("  % Tokens", "dim")
         self._w(t_fill, _pct_tag(tok_pct))
         self._w(t_empty, "dim")
         self._w(f"  {tok_pct:5.1f}%\n", "val")
 
-        self._w("  ◈ Cost    ", "dim")
+        self._w("  $ Cost", "dim")
         self._w(c_fill, _pct_tag(cost_pct))
         self._w(c_empty, "dim")
         self._w(f"  ${cost:.2f}\n", "val")
@@ -279,7 +279,7 @@ class MonitorPopup:
             return
 
         # ── Compact+ ─────────────────────────────────────────────────────────
-        self._w("  ▷ Sent    ", "dim")
+        self._w("  > Sent", "dim")
         self._w(f"{sent:,}", "val")
         self._w(" msgs\n", "dim")
 
@@ -290,7 +290,7 @@ class MonitorPopup:
                 end_dt = datetime.fromisoformat(end_str.replace("Z", "+00:00"))
                 rem    = max(0.0, (end_dt - datetime.now(_tz.utc)).total_seconds())
                 h, m   = int(rem // 3600), int((rem % 3600) // 60)
-                self._w("  ⏳ Resets  ", "dim")
+                self._w("  - Resets", "dim")
                 self._w(f"{h}h {m}m\n", "info")
             except Exception:
                 pass
@@ -308,7 +308,7 @@ class MonitorPopup:
                 for v in per_model.values()
                 if isinstance(v, dict)
             )
-            self._w("  ◆ Models\n", "dim")
+            self._w("  + Models\n", "dim")
             for mname, stats in list(per_model.items())[:3]:
                 if not isinstance(stats, dict):
                     continue
