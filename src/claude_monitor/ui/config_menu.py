@@ -82,10 +82,9 @@ class ConfigMenu:
     # ── Rendering ─────────────────────────────────────────────────────────────
 
     def _render_header(self) -> None:
-        from claude_monitor.terminal.icons import ICONS as _IC
-        _h = _IC["header"]
-        title = Text(f"{_h}  CLAUDE MONITOR  --  SETTINGS  {_h}", style="bold")
-        self.console.print(Rule(title=title, style="info"))
+        self.console.print(Rule(style="cyan"))
+        self.console.print("[bold cyan]SETTINGS MENU[/bold cyan]")
+        self.console.print(Rule(style="cyan"))
         self.console.print()
 
     def _render_current_settings(self) -> None:
@@ -114,33 +113,29 @@ class ConfigMenu:
 
     def _render_options(self) -> None:
         """Print the numbered / lettered option list."""
-        rows: list[Tuple[str, str, str]] = [
-            # (key,  label,                  hint)
-            ("[1]",  "Change plan",           "pro / max5 / max20 / custom"),
-            ("[2]",  "Animation level",       "none / subtle / moderate / full"),
-            ("[3]",  "Toggle keyword panel",  "show or hide the analytics section"),
-            ("[4]",  "Theme",                 "auto / dark / light"),
-            ("[5]",  "Timezone",              "e.g. America/Denver  UTC  Europe/London"),
-            ("[6]",  "Refresh rate",          "seconds between data updates (1-60)"),
-            ("────", "────────────────────",  ""),
-            ("[7]",  "Edit keywords file",    "add/remove tracked topics"),
-            ("[8]",  "Add a keyword",         "quick-add without opening the file"),
-            ("────", "────────────────────",  ""),
-            ("[9]",  "How to use popup",      "floating PiP overlay instructions"),
-            ("[r]",  "Reset saved settings",  "clear ~/.claude-monitor/last_used.json"),
-            ("────", "────────────────────",  ""),
-            ("[0]",  "Save & return",         ""),
+        self.console.print("[bold]Configuration Options:[/bold]")
+        self.console.print()
+
+        options = [
+            ("1", "Change plan",           "pro / max5 / max20 / custom"),
+            ("2", "Animation level",       "none / subtle / moderate / full"),
+            ("3", "Toggle keyword panel",  "show/hide analytics"),
+            ("4", "Theme",                 "auto / dark / light"),
+            ("5", "Timezone",              "e.g. America/Denver, Europe/London"),
+            ("6", "Refresh rate",          "seconds between updates (1-60)"),
+            ("7", "Edit keywords file",    "add/remove tracked topics"),
+            ("8", "Add a keyword",         "quick-add without opening file"),
         ]
 
-        for key, label, hint in rows:
-            if key.startswith("─"):
-                self.console.print(f"  [dim]{'─' * 50}[/dim]")
-                continue
+        for key, label, hint in options:
             self.console.print(
-                f"  [bold cyan]{key}[/bold cyan]  "
-                f"[value]{label:<26}[/value]  "
-                + (f"[dim]{hint}[/dim]" if hint else "")
+                f"  [cyan]{key}[/cyan]  {label:<25} [dim]{hint}[/dim]"
             )
+
+        self.console.print()
+        self.console.print("[bold]Advanced:[/bold]")
+        self.console.print("  r  Reset saved settings      clear ~/.claude-monitor/last_used.json")
+        self.console.print("  0  Save & return             back to monitor")
         self.console.print()
 
     # ── Input ─────────────────────────────────────────────────────────────────

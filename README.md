@@ -12,48 +12,42 @@ Fork of [Maciek-roboblog/Claude-Code-Usage-Monitor](https://github.com/Maciek-ro
 
 ## Installation
 
-### Download a binary (no Python required)
+### Option 1: Standalone Executable (Recommended for simplicity)
 
-Go to the [Releases page](https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/latest) and download the file for your platform:
+No Python required! Download and run immediately.
 
-| Platform | File |
-|----------|------|
-| Windows | `claude-monitor-windows.exe` |
-| macOS | `claude-monitor-macos` |
-| Linux | `claude-monitor-linux` |
+Go to [Releases](https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/latest) and download for your platform:
 
-**Windows:** Double-click to run, or run it from any terminal. Windows Defender may show a SmartScreen warning the first time — click "More info" then "Run anyway". This happens because the executable is not code-signed.
+| Platform | File | How to run |
+|----------|------|-----------|
+| **Windows** | `claude-monitor-windows.exe` | Double-click, or `.\claude-monitor-windows.exe` in terminal |
+| **macOS** | `claude-monitor-macos` | `chmod +x claude-monitor-macos`, then `./claude-monitor-macos` |
+| **Linux** | `claude-monitor-linux` | `chmod +x claude-monitor-linux`, then `./claude-monitor-linux` |
 
-**macOS:** Right-click the file and choose Open the first time, then click Open in the dialog. macOS blocks unsigned binaries from double-clicking until you explicitly allow them once. After that it runs normally.
-
-**Linux:**
-```bash
-chmod +x claude-monitor-linux
-./claude-monitor-linux
-```
+**Note for Windows:** Windows Defender may show a SmartScreen warning (because the exe isn't code-signed). Click "More info" then "Run anyway".
 
 ---
 
-### Install with uv or pip (Python required)
+### Option 2: Python Package (Recommended for flexibility)
 
-If you already have Python set up and prefer package management:
+Install via package manager if you have Python 3.9+. Great if you want to run it from any terminal as `claude-monitor`.
 
-```powershell
-# Windows — install uv if you don't have it
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
+**With uv** (fastest and cleanest):
 
 ```bash
+# Install uv if you don't have it
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
 # macOS / Linux
 curl -LsSf https://astral.sh/uv/install.sh | sh
-```
 
-```bash
+# Then install the monitor
 uv tool install wyattmcph-claude-monitor
 claude-monitor
 ```
 
-Or with pip:
+**With pip:**
 
 ```bash
 pip install wyattmcph-claude-monitor
@@ -63,8 +57,23 @@ claude-monitor
 **From source:**
 
 ```bash
-pip install git+https://github.com/wyattmcph/wyattmcph-claude-monitor.git
+git clone https://github.com/wyattmcph/wyattmcph-claude-monitor.git
+cd wyattmcph-claude-monitor
+pip install -e .
+claude-monitor
 ```
+
+---
+
+### Which should I choose?
+
+| | Standalone .exe | Python package |
+|---|---|---|
+| Setup time | Instant | ~30 seconds |
+| Requires Python | No | Yes (3.9+) |
+| Update method | Download new exe | `uv tool upgrade` or `pip install --upgrade` |
+| Terminal integration | Works in any terminal | Full integration with `PATH` |
+| Best for | One-click usage | Development or power users |
 
 ---
 
@@ -120,12 +129,16 @@ Settings are saved to `~/.claude-monitor/last_used.json` and restored on the nex
 
 | Plan | Token limit | Cost limit | Use when |
 |------|-------------|------------|----------|
-| `pro` | ~19,000 | $18 | Claude Pro ($20/mo) |
-| `max5` | ~88,000 | $35 | Claude Max ($100/mo) |
-| `max20` | ~220,000 | $140 | Claude Max ($200/mo) |
-| `custom` | P90 auto-detect | ~$50 | Unknown or variable limits |
+| `pro` | 200,000 | $20 | Claude Pro ($20/mo) |
+| `max5` | 1,000,000 | $100 | Claude Max 5x ($100/mo) |
+| `max20` | 4,000,000 | $400 | Claude Max 20x ($200/mo) |
+| `custom` | P90 auto-detect | $50+ | Unknown or variable limits |
 
-The `custom` plan looks at the last 8 days of your session history and uses the 90th-percentile values as your limits. It adapts over time but can read high on the first run.
+**On first run**, the monitor automatically detects your plan based on your usage history. You can always change it:
+- Press `m` while running and select option 1
+- Or pass `--plan pro` / `--plan max5` / etc. on the command line
+
+The `custom` plan analyzes your session history and uses the 90th-percentile values as your limits. It adapts over time.
 
 ---
 
@@ -183,12 +196,43 @@ Bar widths also adjust to terminal width. The keyword panel is always the first 
 
 ---
 
+## v3.5.0 Features
+
+### CSV Export
+Export your session data for analysis in Excel or other tools:
+
+```bash
+claude-monitor --export ~/Downloads/sessions.csv
+```
+
+Creates two files:
+- `sessions.csv` — individual session details (tokens, cost, duration, models)
+- `summary.csv` — aggregated stats by model (usage %, cost %)
+
+### Session History View
+View a table of all your recent sessions:
+
+```bash
+claude-monitor --view sessions
+```
+
+Shows session ID, start time, duration, models used, tokens, and cost.
+
+### Auto-Detection
+On first run, the monitor analyzes your usage history and automatically suggests the correct plan. No need to guess!
+
+### OS Notifications
+Get desktop notifications at 70%, 80%, and 95% token usage so you never hit limits unexpectedly.
+
+---
+
 ## Views
 
 ```bash
 claude-monitor --view realtime   # live monitor (default)
 claude-monitor --view daily      # daily usage table
 claude-monitor --view monthly    # monthly usage table
+claude-monitor --view sessions   # individual session records
 ```
 
 ---
