@@ -200,6 +200,68 @@ class TableViewsController:
 
         return table
 
+    def create_sessions_table(
+        self,
+        sessions_data: List[Dict[str, Any]],
+        totals: Dict[str, Any],
+        timezone: str = "UTC",
+    ) -> Table:
+        """Create a sessions history table.
+
+        Args:
+            sessions_data: List of session data with start_time, end_time, tokens, cost
+            totals: Total statistics
+            timezone: Timezone for display
+
+        Returns:
+            Rich Table object
+        """
+        table = Table(
+            title=f"Claude Code Session History ({timezone})",
+            title_style="bold cyan",
+            show_header=True,
+            header_style="bold",
+            border_style="bright_blue",
+            expand=True,
+            show_lines=False,
+        )
+
+        # Add columns for session view
+        table.add_column("Session ID", style=self.key_style, width=16)
+        table.add_column("Start Time", style=self.value_style, width=19)
+        table.add_column("Duration (min)", style=self.value_style, justify="right", width=14)
+        table.add_column("Models", style=self.value_style, width=18)
+        table.add_column("Total Tokens", style=self.accent_style, justify="right", width=12)
+        table.add_column("Cost (USD)", style=self.success_style, justify="right", width=10)
+        table.add_column("Msgs", style=self.value_style, justify="right", width=5)
+
+        # Add data rows
+        for session in sessions_data:
+            models = self._format_models(session.get("models", []))
+            table.add_row(
+                session.get("id", "—")[:16],
+                session.get("start_time", "—"),
+                f"{session.get('duration_minutes', 0):.1f}",
+                models,
+                format_number(session.get("total_tokens", 0)),
+                format_currency(session.get("cost", 0)),
+                str(session.get("message_count", 0)),
+            )
+
+        # Add totals row
+        table.add_row("", "", "", "", "", "", "")
+        table.add_row(
+            Text("Total", style=self.accent_style),
+            "",
+            "",
+            "",
+            Text(format_number(totals.get("total_tokens", 0)), style=self.accent_style),
+            Text(format_currency(totals.get("total_cost", 0)), style=self.success_style),
+            Text(str(totals.get("message_count", 0)), style=self.value_style),
+        )
+
+        return table
+
     def create_summary_panel(
         self, view_type: str, totals: Dict[str, Any], period: str
     ) -> Panel:
@@ -294,24 +356,26 @@ class TableViewsController:
         view_type: str,
         timezone: str = "UTC",
     ) -> Table:
-        """Create a table for either daily or monthly aggregated data.
+        """Create a table for daily, monthly, or sessions data.
 
         Args:
-            aggregate_data: List of aggregated data (daily or monthly)
+            aggregate_data: List of aggregated data (daily, monthly, or sessions)
             totals: Total statistics
-            view_type: Type of view ('daily' or 'monthly')
+            view_type: Type of view ('daily', 'monthly', or 'sessions')
             timezone: Timezone for display
 
         Returns:
             Rich Table object
 
         Raises:
-            ValueError: If view_type is not 'daily' or 'monthly'
+            ValueError: If view_type is not 'daily', 'monthly', or 'sessions'
         """
         if view_type == "daily":
             return self.create_daily_table(aggregate_data, totals, timezone)
         elif view_type == "monthly":
             return self.create_monthly_table(aggregate_data, totals, timezone)
+        elif view_type == "sessions":
+            return self.create_sessions_table(aggregate_data, totals, timezone)
         else:
             raise ValueError(f"Invalid view type: {view_type}")
 
@@ -362,8 +426,10 @@ class TableViewsController:
         # Determine period for summary
         if view_mode == "daily":
             period = f"{data[0]['date']} to {data[-1]['date']}" if data else "No data"
-        else:  # monthly
+        elif view_mode == "monthly":
             period = f"{data[0]['month']} to {data[-1]['month']}" if data else "No data"
+        else:  # sessions
+            period = f"{len(data)} sessions" if data else "No data"
 
         # Create and display summary panel
         summary_panel = self.create_summary_panel(view_mode, totals, period)

@@ -91,6 +91,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         run_config_menu(args)
         return 0
 
+    # Set the console window title so the exe shows a real name
+    try:
+        if sys.platform == "win32":
+            import ctypes
+            ctypes.windll.kernel32.SetConsoleTitleW(f"Claude Monitor {__version__}")
+    except Exception:
+        pass
+
     # Startup update check — synchronous, prompts user, defaults to yes.
     # Skipped in popup mode (no interactive prompts there).
     try:
@@ -133,6 +141,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         # plan before (no saved_plan in last_used.json) AND didn't pass
         # --plan on the CLI this invocation.
         _plan_first_run_check(argv, args)
+
+        # ── Handle export mode ─────────────────────────────────────────────
+        if hasattr(args, "export") and args.export:
+            _handle_export(args)
+            return 0
 
         _run_monitoring(args)
 
@@ -190,25 +203,51 @@ def _plan_first_run_check(
 
     c = _Con()
     c.print()
-    title = _Txt("  CLAUDE MONITOR  --  QUICK SETUP  ", style="bold")
+    from claude_monitor.terminal.icons import ICONS as _IC
+    _h = _IC["header"]
+    title = _Txt(f"{_h}  CLAUDE MONITOR  --  QUICK SETUP  {_h}", style="bold")
     c.print(_Rule(title=title, style="#C97A4A"))
     c.print()
     c.print("  [bold]What Claude plan are you on?[/bold]")
     c.print("  [dim](This sets your token & cost limits correctly. Press [m] later to change.)[/dim]")
     c.print()
+
+    # ── Try to detect plan from history ────────────────────────────────────
+    detected_plan = None
+    try:
+        from claude_monitor.data.plan_detector import detect_plan_from_history
+        from pathlib import Path
+        from claude_monitor.core.data_fetcher import load_session_blocks
+
+        # Load the history and detect plan
+        data_file = Path.home() / ".claude-monitor" / "session_data.json"
+        if data_file.exists():
+            blocks = load_session_blocks(data_file)
+            if blocks:
+                detected_plan = detect_plan_from_history(blocks)
+    except Exception:
+        pass  # Silently fail if detection doesn't work
+
     c.print("  [bold cyan][1][/bold cyan]  [value]Pro[/value]           [dim]$20/month  — most common[/dim]")
     c.print("  [bold cyan][2][/bold cyan]  [value]Max 5[/value]         [dim]$100/month — 5× usage[/dim]")
     c.print("  [bold cyan][3][/bold cyan]  [value]Max 20[/value]        [dim]$200/month — 20× usage[/dim]")
     c.print("  [bold cyan][4][/bold cyan]  [value]Custom[/value]        [dim]Calculate limits from your usage history[/dim]")
+
+    if detected_plan:
+        c.print(f"  [dim]✓ We detected you may be on [bold]{detected_plan.upper()}[/bold] based on your history[/dim]")
     c.print()
 
     _MAP = {"1": "pro", "2": "max5", "3": "max20", "4": "custom",
             "pro": "pro", "max5": "max5", "max20": "max20", "custom": "custom"}
 
+    # Map detected plan to the default option
+    _PLAN_TO_NUM = {"pro": "1", "max5": "2", "max20": "3", "custom": "4"}
+    default_choice = _PLAN_TO_NUM.get(detected_plan, "1") if detected_plan else "1"
+
     from rich.prompt import Prompt as _P
     raw = _P.ask(
         "  [bold cyan]Enter number or name[/bold cyan]",
-        default="1",
+        default=default_choice,
         console=c,
         show_default=False,
     ).strip().lower()
@@ -274,7 +313,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
             return
 
         # Handle different view modes
-        if view_mode in ["daily", "monthly"]:
+        if view_mode in ["daily", "monthly", "sessions"]:
             _run_table_view(args, data_path, view_mode, console)
             return
 
@@ -582,30 +621,142 @@ def validate_cli_environment() -> Optional[str]:
         return f"Environment validation failed: {e}"
 
 
+def _handle_export(args: argparse.Namespace) -> None:
+    """Handle CSV export of session data.
+
+    Args:
+        args: Settings namespace with export path
+    """
+    logger = logging.getLogger(__name__)
+    console = get_themed_console()
+
+    try:
+        # Discover Claude data paths
+        data_paths: List[Path] = discover_claude_data_paths()
+        if not data_paths:
+            print_themed("No Claude data directory found", style="error")
+            return
+
+        data_path = data_paths[0]
+        export_path = args.export
+
+        # Load usage data and create session blocks
+        from claude_monitor.data.reader import load_usage_entries
+        from claude_monitor.data.analyzer import SessionAnalyzer
+        from claude_monitor.data.exporter import export_sessions_to_csv, export_summary_to_csv
+
+        print_themed("Loading usage data...", style="info")
+        entries, _ = load_usage_entries(str(data_path))
+
+        if not entries:
+            print_themed("No usage data found", style="warning")
+            return
+
+        print_themed(f"Processing {len(entries)} entries...", style="info")
+        analyzer = SessionAnalyzer()
+        blocks = analyzer.transform_to_blocks(entries)
+
+        if not blocks:
+            print_themed("No session blocks created", style="warning")
+            return
+
+        # Export to CSV
+        print_themed(f"Exporting {len(blocks)} sessions to CSV...", style="info")
+        sessions_file = export_sessions_to_csv(blocks, export_path)
+        print_themed(f"✓ Sessions exported to: {sessions_file}", style="success")
+
+        # Also generate summary
+        summary_dir = Path(export_path).parent if export_path else Path.home() / "Downloads"
+        summary_path = summary_dir / "claude-monitor-summary.csv"
+        summary_file = export_summary_to_csv(blocks, str(summary_path))
+        print_themed(f"✓ Summary exported to: {summary_file}", style="success")
+
+    except Exception as e:
+        logger.error(f"Export failed: {e}", exc_info=True)
+        print_themed(f"Export failed: {e}", style="error")
+
+
 def _run_table_view(
     args: argparse.Namespace, data_path: Path, view_mode: str, console: Console
 ) -> None:
-    """Run table view mode (daily/monthly)."""
+    """Run table view mode (daily/monthly/sessions)."""
     logger = logging.getLogger(__name__)
 
     try:
-        # Create aggregator with appropriate mode
-        aggregator = UsageAggregator(
-            data_path=str(data_path),
-            aggregation_mode=view_mode,
-            timezone=args.timezone,
-        )
-
         # Create table controller
         controller = TableViewsController(console=console)
 
-        # Get aggregated data
-        logger.info(f"Loading {view_mode} usage data...")
-        aggregated_data = aggregator.aggregate()
+        # Handle sessions view mode separately
+        if view_mode == "sessions":
+            from claude_monitor.data.reader import load_usage_entries
+            from claude_monitor.data.analyzer import SessionAnalyzer
 
-        if not aggregated_data:
-            print_themed(f"No usage data found for {view_mode} view", style="warning")
-            return
+            logger.info("Loading session data...")
+            entries, _ = load_usage_entries(str(data_path))
+
+            if not entries:
+                print_themed("No usage data found for sessions view", style="warning")
+                return
+
+            analyzer = SessionAnalyzer()
+            blocks = analyzer.transform_to_blocks(entries)
+
+            if not blocks:
+                print_themed("No session blocks created", style="warning")
+                return
+
+            # Convert blocks to display format
+            sessions_data = []
+            for block in blocks:
+                if not block.is_gap:
+                    sessions_data.append({
+                        "id": block.id,
+                        "start_time": block.start_time.strftime("%Y-%m-%d %H:%M:%S"),
+                        "duration_minutes": block.duration_minutes,
+                        "models": block.models,
+                        "total_tokens": block.token_counts.total_tokens,
+                        "cost": block.cost_usd,
+                        "message_count": block.sent_messages_count,
+                    })
+
+            # Calculate totals
+            totals = {
+                "total_tokens": sum(s["total_tokens"] for s in sessions_data),
+                "total_cost": sum(s["cost"] for s in sessions_data),
+                "message_count": sum(s["message_count"] for s in sessions_data),
+            }
+
+            aggregated_data = sessions_data
+        else:
+            # Use aggregator for daily/monthly modes
+            aggregator = UsageAggregator(
+                data_path=str(data_path),
+                aggregation_mode=view_mode,
+                timezone=args.timezone,
+            )
+
+            logger.info(f"Loading {view_mode} usage data...")
+            aggregated_data = aggregator.aggregate()
+
+            if not aggregated_data:
+                print_themed(f"No usage data found for {view_mode} view", style="warning")
+                return
+
+            # Calculate totals from aggregated data
+            totals = {
+                "input_tokens": sum(d["input_tokens"] for d in aggregated_data),
+                "output_tokens": sum(d["output_tokens"] for d in aggregated_data),
+                "cache_creation_tokens": sum(d["cache_creation_tokens"] for d in aggregated_data),
+                "cache_read_tokens": sum(d["cache_read_tokens"] for d in aggregated_data),
+                "total_tokens": sum(
+                    d["input_tokens"]
+                    + d["output_tokens"]
+                    + d["cache_creation_tokens"]
+                    + d["cache_read_tokens"]
+                    for d in aggregated_data
+                ),
+                "total_cost": sum(d["total_cost"] for d in aggregated_data),
+            }
 
         # Display the table
         controller.display_aggregated_view(

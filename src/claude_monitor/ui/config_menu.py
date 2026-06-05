@@ -82,7 +82,9 @@ class ConfigMenu:
     # ── Rendering ─────────────────────────────────────────────────────────────
 
     def _render_header(self) -> None:
-        title = Text("  CLAUDE MONITOR  --  SETTINGS  ", style="bold")
+        from claude_monitor.terminal.icons import ICONS as _IC
+        _h = _IC["header"]
+        title = Text(f"{_h}  CLAUDE MONITOR  --  SETTINGS  {_h}", style="bold")
         self.console.print(Rule(title=title, style="info"))
         self.console.print()
 

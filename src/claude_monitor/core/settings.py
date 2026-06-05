@@ -106,9 +106,18 @@ class Settings(BaseSettings):
         description="Plan type (pro, max5, max20, custom)",
     )
 
-    view: Literal["realtime", "daily", "monthly", "session"] = Field(
+    view: Literal["realtime", "daily", "monthly", "sessions"] = Field(
         default="realtime",
-        description="View mode (realtime, daily, monthly, session)",
+        description="View mode (realtime, daily, monthly, sessions)",
+    )
+
+    export: Optional[str] = Field(
+        default=None,
+        description=(
+            "Export session data to CSV file at the specified path "
+            "(e.g., --export ~/Downloads/sessions.csv). "
+            "Also generates a summary file."
+        ),
     )
 
     @staticmethod
@@ -221,7 +230,7 @@ class Settings(BaseSettings):
         """Validate and normalize view value."""
         if isinstance(v, str):
             v_lower = v.lower()
-            valid_views = ["realtime", "daily", "monthly", "session"]
+            valid_views = ["realtime", "daily", "monthly", "sessions"]
             if v_lower in valid_views:
                 return v_lower
             raise ValueError(

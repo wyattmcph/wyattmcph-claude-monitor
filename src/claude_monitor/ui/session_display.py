@@ -23,18 +23,18 @@ from claude_monitor.utils.time_utils import (
     percentage,
 )
 
-# ── Icon set ──────────────────────────────────────────────────────────────────
-# Uses only characters present in Consolas/Courier New so the standalone
-# Windows executable renders correctly in a plain cmd-style console.
-_I_COST      = "$"   # cost bars / cost usage
-_I_TOKENS    = "%"   # token usage / token count
-_I_MESSAGES  = ">"   # messages sent
-_I_BURN      = "~"   # burn rate
-_I_MODEL     = "+"   # model distribution
-_I_TIME      = "-"   # time to reset
-_I_PREDICT   = "*"   # predictions
-_I_COSTRATE  = "^"   # cost rate
-_I_STATUS    = "*"   # active session
+# ── Icon set — chosen at startup based on terminal capability ─────────────────
+from claude_monitor.terminal.icons import ICONS as _IC
+
+_I_COST      = _IC["cost"]
+_I_TOKENS    = _IC["tokens"]
+_I_MESSAGES  = _IC["messages"]
+_I_BURN      = _IC["burn"]
+_I_MODEL     = _IC["model"]
+_I_TIME      = _IC["time"]
+_I_PREDICT   = _IC["predict"]
+_I_COSTRATE  = _IC["cost_rate"]
+_I_STATUS    = _IC["status"]
 # ─────────────────────────────────────────────────────────────────────────────
 
 

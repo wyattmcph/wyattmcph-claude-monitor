@@ -35,7 +35,9 @@ class KeywordPanel:
         Returns:
             ``[top_rule, table, bottom_rule, ""]``
         """
-        title     = Text("  KEYWORD ANALYTICS  ", style="bold info")
+        from claude_monitor.terminal.icons import ICONS as _IC
+        _kw = _IC["keyword"]
+        title = Text(f"{_kw}  KEYWORD ANALYTICS  {_kw}", style="bold info")
         top_rule  = Rule(title=title, style="info")
         bot_rule  = Rule(style="separator")
 

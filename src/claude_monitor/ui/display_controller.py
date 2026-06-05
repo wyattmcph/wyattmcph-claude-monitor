@@ -59,6 +59,8 @@ class DisplayController:
         # Rate-limit keyword re-analysis to once every 30 seconds
         self._last_keyword_refresh: float = 0.0
         self._keyword_refresh_interval: float = 30.0
+        # Track which OS notification thresholds have been sent this session
+        self._os_notified: set = set()
 
     def _extract_session_data(self, active_block: Dict[str, Any]) -> Dict[str, Any]:
         """Extract basic session data from active block."""
@@ -299,6 +301,9 @@ class DisplayController:
         if isinstance(burn_rate_val, (int, float)) and burn_rate_val >= 0:
             self._burn_rate_history.append(float(burn_rate_val))
 
+        # OS threshold notifications (70 / 80 / 95 %)
+        self._check_threshold_notifications(processed_data)
+
         # Inject visual/analytics extras
         processed_data["animation_level"] = animation_level
         processed_data["burn_rate_history"] = list(self._burn_rate_history)
@@ -470,6 +475,45 @@ class DisplayController:
             model_distribution[model] = model_percentage
 
         return model_distribution
+
+    def _check_threshold_notifications(
+        self, processed_data: Dict[str, Any]
+    ) -> None:
+        """Send an OS desktop notification when usage crosses 70 / 80 / 95 %.
+
+        Each threshold fires at most once per session (tracked in
+        ``_os_notified``).  Errors are silently ignored so a notification
+        failure can never crash the live display.
+        """
+        try:
+            from claude_monitor.utils.os_notifications import notify
+
+            pct = processed_data.get("usage_percentage", 0.0)
+            plan = processed_data.get("plan", "")
+            tokens_used = processed_data.get("tokens_used", 0)
+            token_limit = processed_data.get("token_limit", 0)
+
+            thresholds = [
+                (70, "Approaching token limit",
+                 f"{pct:.0f}% used  ({tokens_used:,} / {token_limit:,})", "normal"),
+                (80, "Token limit 80% reached",
+                 f"{pct:.0f}% used — plan ahead to avoid hitting the limit.", "normal"),
+                (95, "Token limit almost full",
+                 f"{pct:.0f}% used — session will reset soon.", "critical"),
+            ]
+
+            for threshold, title, body, urgency in thresholds:
+                key = f"pct_{threshold}"
+                if pct >= threshold and key not in self._os_notified:
+                    self._os_notified.add(key)
+                    notify(title, body, urgency)
+                elif pct < threshold - 5:
+                    # Reset once usage drops back down (e.g. new session)
+                    self._os_notified.discard(key)
+
+        except Exception as exc:
+            logger = logging.getLogger(__name__)
+            logger.debug("Threshold notification error: %s", exc)
 
     def _refresh_keyword_stats(
         self,
