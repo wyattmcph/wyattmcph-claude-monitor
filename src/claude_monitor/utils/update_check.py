@@ -72,6 +72,12 @@ def startup_update_check(skip: bool = False) -> None:
     if skip:
         return
 
+    # If running as a standalone executable (PyInstaller), skip update check
+    # because pip upgrades won't update the .exe file
+    if getattr(sys, "frozen", False):
+        logger.debug("Running as standalone executable, skipping update check")
+        return
+
     # If we can't determine the running version, skip to avoid false positives
     if __version__ in ("unknown", ""):
         return
@@ -82,6 +88,7 @@ def startup_update_check(skip: bool = False) -> None:
 
     # An update is available
     print(f"\n  Update available: v{latest}  (you have v{__version__})")
+    print(f"  Download from: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases\n")
 
     try:
         raw = input("  Install now? [Y/n]: ").strip().lower()
@@ -101,8 +108,9 @@ def startup_update_check(skip: bool = False) -> None:
         sys.exit(0)
     else:
         print(
-            f"\n  Automatic upgrade failed. Run this manually:\n"
-            f"    uv tool upgrade {_PACKAGE}\n"
+            f"\n  Automatic upgrade failed.\n"
+            f"  Download the latest version from:\n"
+            f"  https://github.com/wyattmcph/wyattmcph-claude-monitor/releases\n"
         )
 
 
