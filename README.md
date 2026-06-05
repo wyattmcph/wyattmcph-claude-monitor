@@ -63,7 +63,7 @@ claude-monitor
 ### Install from source (latest changes)
 
 ```bash
-pip install git+https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze.git
+pip install git+https://github.com/wyattmcph/wyattmcph-claude-monitor.git
 ```
 
 ---
@@ -215,7 +215,7 @@ Claude Code uses **5-hour rolling session windows**:
 
 ```bash
 # Clone this fork
-git clone https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze.git
+git clone https://github.com/wyattmcph/wyattmcph-claude-monitor.git
 cd Claude-Code-Usage-Monitor-and-Analyze
 
 # Install in editable mode with dev dependencies
@@ -262,6 +262,6 @@ Built on top of the excellent original by [Maciek-roboblog](https://github.com/M
 
 **⭐ Star this repo if you find it useful! ⭐**
 
-[Report Bug](https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze/issues) · [Request Feature](https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze/issues)
+[Report Bug](https://github.com/wyattmcph/wyattmcph-claude-monitor/issues) · [Request Feature](https://github.com/wyattmcph/wyattmcph-claude-monitor/issues)
 
 </div>

@@ -74,13 +74,13 @@ test = [
 
 
 [project.urls]
-homepage = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze"
-repository = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze.git"
-documentation = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze#readme"
-issues = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze/issues"
-changelog = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze/blob/main/CHANGELOG.md"
-"Release Notes" = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze/releases"
-"Discussions" = "https://github.com/wyattmcph/Claude-Code-Usage-Monitor-and-Analyze/discussions"
+homepage = "https://github.com/wyattmcph/wyattmcph-claude-monitor"
+repository = "https://github.com/wyattmcph/wyattmcph-claude-monitor.git"
+documentation = "https://github.com/wyattmcph/wyattmcph-claude-monitor#readme"
+issues = "https://github.com/wyattmcph/wyattmcph-claude-monitor/issues"
+changelog = "https://github.com/wyattmcph/wyattmcph-claude-monitor/blob/main/CHANGELOG.md"
+"Release Notes" = "https://github.com/wyattmcph/wyattmcph-claude-monitor/releases"
+"Discussions" = "https://github.com/wyattmcph/wyattmcph-claude-monitor/discussions"
 
 [project.scripts]
 claude-monitor = "claude_monitor.__main__:main"
