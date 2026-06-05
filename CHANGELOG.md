@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.2.2] - 2026-06-05
+
+### 🐛 Bug Fixes
+- **Gradient bars now visible in dark/light themes**: Cost colour styles in both themes were mapped to plain white/black, making all three gradient segments look identical. Now uses distinct green/orange/red colours so the fill visually transitions as usage increases.
+
+### 🔗 Links
+[3.2.2]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.2.2
+
 ## [3.2.1] - 2026-06-05
 
 ### 🐛 Bug Fixes

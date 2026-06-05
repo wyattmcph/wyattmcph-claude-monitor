@@ -85,9 +85,9 @@ class AdaptiveColorScheme:
                 "progress_bar": "black",  # Pure black for light theme
                 "highlight": "color(124)",  # Dark red (#af0000) - matches error
                 # Cost styles
-                "cost.low": "black",  # Pure black for light theme
-                "cost.medium": "black",  # Pure black for light theme
-                "cost.high": "black",  # Pure black for light theme
+                "cost.low": "color(22)",    # Dark green
+                "cost.medium": "color(166)", # Dark orange
+                "cost.high": "color(124)",   # Dark red
                 # Table styles
                 "table.border": "color(238)",  # Medium-dark gray for better visibility
                 "table.header": "bold color(17)",  # Bold deep blue
@@ -142,9 +142,9 @@ class AdaptiveColorScheme:
                 "progress_bar": "white",  # Pure white for dark theme
                 "highlight": "color(203)",  # Light red (#ff5f5f) - matches error
                 # Cost styles
-                "cost.low": "white",  # Pure white for dark theme
-                "cost.medium": "white",  # Pure white for dark theme
-                "cost.high": "white",  # Pure white for dark theme
+                "cost.low": "color(118)",   # Bright green
+                "cost.medium": "color(214)", # Orange
+                "cost.high": "color(203)",   # Bright red
                 # Table styles
                 "table.border": "color(248)",  # Light gray
                 "table.header": "bold color(117)",  # Bold light blue
