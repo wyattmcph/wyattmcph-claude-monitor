@@ -7,6 +7,13 @@ continues to use __main__.py as usual.
 """
 
 import sys
+
+# Bootstrap the console into UTF-8 + truecolor BEFORE any UI module loads,
+# so the standalone exe renders box-drawing, gradient bars and icons crisply.
+from claude_monitor.terminal.console_setup import setup_console
+
+setup_console()
+
 from claude_monitor.cli.main import main
 
 sys.exit(main() or 0)

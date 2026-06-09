@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Optional
 from rich.console import Console, RenderableType
 
 from claude_monitor.terminal.themes import get_cost_style, get_velocity_indicator
-from claude_monitor.ui.layouts import HeaderManager
 
 
 class VelocityIndicator:
@@ -95,28 +94,24 @@ class ErrorDisplayComponent:
         Returns:
             List of formatted error screen lines
         """
-        from claude_monitor.terminal.themes import AnimationState
+        from rich.console import Group
+        from rich.text import Text
 
-        screen_buffer = []
+        from claude_monitor.terminal.icons import ICONS as _IC
+        from claude_monitor.ui.dashboard import info_card
 
-        header_manager = HeaderManager()
-        screen_buffer.extend(
-            header_manager.create_header_panel(
-                plan=plan, timezone=timezone,
-                animation_frame=AnimationState.get(),
-                animation_level="subtle",
-            )
+        body = Group(
+            Text(
+                f"{_IC['warning']} Couldn't read your Claude usage data", style="error"
+            ),
+            Text(),
+            Text.from_markup(
+                "[dim]Make sure you're signed in to Claude Code and have sent "
+                "at least one message.[/dim]"
+            ),
         )
-
-        screen_buffer.append("[error]Failed to get usage data[/]")
-        screen_buffer.append("")
-        screen_buffer.append("[warning]Possible causes:[/]")
-        screen_buffer.append("  • You're not logged into Claude")
-        screen_buffer.append("  • Network connection issues")
-        screen_buffer.append("")
-        screen_buffer.append("[dim]Retrying in 3 seconds... (Ctrl+C to exit)[/]")
-
-        return screen_buffer
+        footer = Text("Retrying every few seconds…   ^C quit", style="dim")
+        return [info_card(plan, body, footer=footer)]
 
 
 class LoadingScreenComponent:
@@ -140,39 +135,30 @@ class LoadingScreenComponent:
         Returns:
             List of loading screen lines
         """
-        from claude_monitor.terminal.themes import AnimationState
+        from rich.console import Group
+        from rich.text import Text
 
-        screen_buffer = []
+        from claude_monitor.terminal.icons import ICONS as _IC
 
-        header_manager = HeaderManager()
-        screen_buffer.extend(
-            header_manager.create_header_panel(
-                plan=plan, timezone=timezone,
-                animation_frame=AnimationState.get(),
-                animation_level="subtle",
-            )
-        )
-
-        screen_buffer.append("")
-        screen_buffer.append("[info]Loading...[/]")
-        screen_buffer.append("")
-
+        lines = [
+            Text(f"{_IC['status']} Starting up…", style="success"),
+            Text(),
+        ]
         if custom_message:
-            screen_buffer.append(f"[warning]{custom_message}[/]")
+            lines.append(Text(custom_message, style="warning"))
         else:
-            screen_buffer.append("[warning]Fetching Claude usage data...[/]")
-
-        screen_buffer.append("")
+            lines.append(Text("Fetching your Claude usage data…", style="dim"))
 
         if plan == "custom" and not custom_message:
-            screen_buffer.append(
-                "[info]Calculating your P90 session limits from usage history...[/]"
+            lines.append(Text())
+            lines.append(
+                Text("Calculating your P90 session limits from history…", style="dim")
             )
-            screen_buffer.append("")
 
-        screen_buffer.append("[dim]This may take a few seconds[/]")
+        from claude_monitor.ui.dashboard import info_card
 
-        return screen_buffer
+        footer = Text("This only takes a moment   ^C quit", style="dim")
+        return [info_card(plan, Group(*lines), footer=footer)]
 
     def create_loading_screen_renderable(
         self,

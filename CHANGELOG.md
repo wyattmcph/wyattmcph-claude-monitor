@@ -1,5 +1,26 @@
 # Changelog
 
+## [3.6.0] - 2026-06-08
+
+### Changed — major visual redesign
+
+- **Centered dashboard card**: The live monitor is now a single rounded, plan-coloured card centered in your terminal instead of left-aligned text lines. It stays centered and scales cleanly as you resize the window — no more content "buried in the top-left corner".
+- **Perfectly aligned metrics**: Tokens, cost, messages and session time render in an aligned grid with calm single-colour progress bars (green → amber → coral by severity), compact limits (`200K`, `4.0M`), burn rate with sparkline, and a live model split.
+- **Consistent everywhere**: The loading, idle, error and first-run screens all share the same card frame for one coherent look.
+- **Redesigned first-run setup**: A friendly "Welcome to Claude Monitor" card with plan auto-detection highlighted inline.
+
+### Fixed
+
+- **Crisp output in the standalone exe**: The bundled binary now forces the Windows console into UTF-8 (code page 65001) + virtual-terminal mode at startup, so box-drawing, gradient bars, icons and 24-bit colour render correctly even when launched by double-clicking — the same quality as Windows Terminal. This removes the long-standing "box characters instead of icons" problem without falling back to ASCII.
+
+### Added
+
+- **One-line installers**: `install.ps1` (Windows) and `install.sh` (macOS/Linux) download the latest build, add `claude-monitor` to PATH, and create Desktop + Start Menu shortcuts on Windows — no Python required.
+
+[3.6.0]: https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/tag/v3.6.0
+
+---
+
 ## [3.4.2] - 2026-06-05
 
 ### Fixed

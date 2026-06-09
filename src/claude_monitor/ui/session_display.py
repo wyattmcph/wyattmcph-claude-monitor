@@ -6,12 +6,13 @@ Uses :mod:`adaptive_layout` to pick the right sections based on terminal size.
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import pytz
 
+# ── Icon set — chosen at startup based on terminal capability ─────────────────
+from claude_monitor.terminal.icons import ICONS as _IC
 from claude_monitor.ui.components import CostIndicator, VelocityIndicator
-from claude_monitor.ui.layouts import HeaderManager
 from claude_monitor.ui.progress_bars import (
     ModelUsageBar,
     TimeProgressBar,
@@ -23,18 +24,15 @@ from claude_monitor.utils.time_utils import (
     percentage,
 )
 
-# ── Icon set — chosen at startup based on terminal capability ─────────────────
-from claude_monitor.terminal.icons import ICONS as _IC
-
-_I_COST      = _IC["cost"]
-_I_TOKENS    = _IC["tokens"]
-_I_MESSAGES  = _IC["messages"]
-_I_BURN      = _IC["burn"]
-_I_MODEL     = _IC["model"]
-_I_TIME      = _IC["time"]
-_I_PREDICT   = _IC["predict"]
-_I_COSTRATE  = _IC["cost_rate"]
-_I_STATUS    = _IC["status"]
+_I_COST = _IC["cost"]
+_I_TOKENS = _IC["tokens"]
+_I_MESSAGES = _IC["messages"]
+_I_BURN = _IC["burn"]
+_I_MODEL = _IC["model"]
+_I_TIME = _IC["time"]
+_I_PREDICT = _IC["predict"]
+_I_COSTRATE = _IC["cost_rate"]
+_I_STATUS = _IC["status"]
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -69,8 +67,8 @@ class SessionDisplayComponent:
 
     def __init__(self):
         self.token_progress = TokenProgressBar()
-        self.time_progress  = TimeProgressBar()
-        self.model_usage    = ModelUsageBar()
+        self.time_progress = TimeProgressBar()
+        self.model_usage = ModelUsageBar()
 
     # ── Wide gradient bar ─────────────────────────────────────────────────────
 
@@ -85,8 +83,8 @@ class SessionDisplayComponent:
             Rich markup string: ``icon [gradient_bar]``.
         """
         icon = "  "  # status conveyed by bar color, not an icon
-        bar     = TokenProgressBar(width=width)
-        filled  = bar._calculate_filled_segments(min(pct, 100.0), 100.0)
+        bar = TokenProgressBar(width=width)
+        filled = bar._calculate_filled_segments(min(pct, 100.0), 100.0)
         return f"{icon} [{bar._render_gradient_bar(filled)}]"
 
     # ── v2 wrapper ────────────────────────────────────────────────────────────
@@ -152,131 +150,67 @@ class SessionDisplayComponent:
         Returns:
             List of Rich-markup strings / Rich renderables for the screen buffer.
         """
-        from claude_monitor.terminal.themes import AnimationState, render_sparkline
-        from claude_monitor.ui.adaptive_layout import LayoutTier, get_layout_config
+        from claude_monitor.ui.adaptive_layout import (
+            get_layout_config,
+            get_terminal_size,
+        )
+        from claude_monitor.ui.dashboard import render_dashboard
 
         kw_available = keyword_stats is not None
         layout = get_layout_config(
             animation_level=animation_level,
             keywords_enabled=kw_available,
         )
+        cols, _rows = get_terminal_size()
 
-        screen_buffer: list[Any] = []
+        # Flatten everything the dashboard renderer needs into one dict.
+        d: dict[str, Any] = {
+            "plan": plan,
+            "timezone": timezone,
+            "tokens_used": tokens_used,
+            "token_limit": token_limit,
+            "usage_percentage": usage_percentage,
+            "session_cost": session_cost,
+            "cost_limit": kwargs.get("cost_limit_p90"),
+            "sent_messages": sent_messages,
+            "messages_limit": kwargs.get("messages_limit_p90", 0),
+            "elapsed_session_minutes": elapsed_session_minutes,
+            "total_session_minutes": total_session_minutes,
+            "burn_rate": burn_rate,
+            "burn_rate_history": burn_rate_history or [],
+            "per_model_stats": per_model_stats,
+            "predicted_end_str": predicted_end_str,
+            "reset_time_str": reset_time_str,
+            "current_time_str": current_time_str,
+            "animation_level": animation_level,
+            "show_switch_notification": show_switch_notification,
+            "show_exceed_notification": show_exceed_notification,
+            "show_tokens_will_run_out": show_tokens_will_run_out,
+        }
 
-        # ── Header ────────────────────────────────────────────────────────────
-        header_manager = HeaderManager()
-        screen_buffer.extend(
-            header_manager.create_header_panel(
-                plan=plan,
-                timezone=timezone,
-                animation_frame=AnimationState.get(),
-                animation_level=animation_level,
-            )
-        )
-
-        # ── NANO: two-line minimum ────────────────────────────────────────────
-        if layout.tier is LayoutTier.NANO:
-            live_dot = AnimationState.live_dot(animation_level)
-            bar_w    = layout.bar_width
-            tok_b    = TokenProgressBar(width=bar_w)
-            t_filled = tok_b._calculate_filled_segments(min(usage_percentage, 100.0), 100.0)
-            t_bar    = tok_b._render_gradient_bar(t_filled)
-            screen_buffer.append(
-                f"{_I_TOKENS} [{t_bar}] {usage_percentage:.1f}%   "
-                f"{_I_COST} [value]${session_cost:.2f}[/]"
-            )
-            screen_buffer.append(
-                f"{_I_BURN}  [warning]{burn_rate:.1f}[/] [dim]t/min[/]   "
-                f"{_I_STATUS} [dim]{current_time_str}[/]  [success]{live_dot}[/]"
-            )
-            return screen_buffer
-
-        # ── COMPACT / STANDARD / FULL ─────────────────────────────────────────
-        if plan in ("custom", "pro", "max5", "max20"):
-            self._render_plan_display(
-                screen_buffer=screen_buffer,
-                layout=layout,
-                plan=plan,
-                tokens_used=tokens_used,
-                token_limit=token_limit,
-                usage_percentage=usage_percentage,
-                session_cost=session_cost,
-                sent_messages=sent_messages,
-                elapsed_session_minutes=elapsed_session_minutes,
-                total_session_minutes=total_session_minutes,
-                per_model_stats=per_model_stats,
-                burn_rate=burn_rate,
-                burn_rate_history=burn_rate_history or [],
-                animation_level=animation_level,
-                cost_limit_p90=kwargs.get("cost_limit_p90"),
-                messages_limit_p90=kwargs.get("messages_limit_p90", 1500),
-            )
-        else:
-            self._render_simple_display(
-                screen_buffer=screen_buffer,
-                layout=layout,
-                tokens_used=tokens_used,
-                token_limit=token_limit,
-                usage_percentage=usage_percentage,
-                tokens_left=tokens_left,
-                session_cost=session_cost,
-                sent_messages=sent_messages,
-                elapsed_session_minutes=elapsed_session_minutes,
-                total_session_minutes=total_session_minutes,
-                per_model_stats=per_model_stats,
-                burn_rate=burn_rate,
-                burn_rate_history=burn_rate_history or [],
-                animation_level=animation_level,
-            )
-
-        # ── Predictions ───────────────────────────────────────────────────────
-        if layout.show_predictions:
-            screen_buffer.append("")
-            screen_buffer.append(f"{_I_PREDICT} [value]Predictions:[/]")
-            screen_buffer.append(
-                f"   [info]Tokens will run out:[/] [warning]{predicted_end_str}[/]"
-            )
-            screen_buffer.append(
-                f"   [info]Limit resets at:[/]     [success]{reset_time_str}[/]"
-            )
-            screen_buffer.append("")
-
-        # ── Notifications ─────────────────────────────────────────────────────
-        if layout.show_notifications:
-            self._add_notifications(
-                screen_buffer,
-                show_switch_notification,
-                show_exceed_notification,
-                show_tokens_will_run_out,
-                original_limit,
-                token_limit,
-            )
-
-        # ── Status bar (always shown) ─────────────────────────────────────────
-        if layout.tier is not LayoutTier.NANO:
-            key_hints = " [dim][[bold]m[/bold]] settings  [[bold]k[/bold]] keywords  [[bold]a[/bold]] anim  |[/dim] "
-        else:
-            key_hints = ""
-        screen_buffer.append(
-            f"[dim]{current_time_str}[/]  [success]● Active[/]{key_hints}"
-            f"[dim]Ctrl+C to exit[/]"
-        )
-
-        # ── Update notice (shown when a newer version is on PyPI) ────────────
-        try:
-            from claude_monitor.utils.update_check import UpdateChecker
-            notice = UpdateChecker.get().notice
-            if notice:
-                screen_buffer.append(f"[dim]o {notice}[/]")
-        except Exception:
-            pass
-
-        # ── Keyword analytics panel (FULL tier only) ──────────────────────────
+        # Keyword analytics ride inside the card on the FULL tier.
+        extra: list[Any] = []
         if keyword_stats is not None and layout.show_keywords:
             from claude_monitor.ui.keyword_panel import KeywordPanel
 
-            screen_buffer.append("")
-            screen_buffer.extend(KeywordPanel().render(keyword_stats))
+            extra = list(KeywordPanel().render(keyword_stats))
+
+        card = render_dashboard(d, layout, cols=cols, extra=extra or None)
+
+        screen_buffer: list[Any] = [card]
+
+        # A newer-version notice sits as a quiet centered line beneath the card.
+        try:
+            from claude_monitor.utils.update_check import UpdateChecker
+
+            notice = UpdateChecker.get().notice
+            if notice:
+                from rich.align import Align
+                from rich.text import Text as _Text
+
+                screen_buffer.append(Align.center(_Text(f"↗ {notice}", style="dim")))
+        except Exception:
+            pass
 
         return screen_buffer
 
@@ -323,7 +257,8 @@ class SessionDisplayComponent:
         if layout.show_cost_bar:
             cost_pct = (
                 min(100, percentage(session_cost, cost_limit_p90))
-                if cost_limit_p90 > 0 else 0
+                if cost_limit_p90 > 0
+                else 0
             )
             cost_bar = self._render_wide_progress_bar(cost_pct, width=bar_w)
             screen_buffer.append(
@@ -347,7 +282,8 @@ class SessionDisplayComponent:
         if layout.show_messages_bar:
             msg_pct = (
                 min(100, percentage(sent_messages, messages_limit_p90))
-                if messages_limit_p90 > 0 else 0
+                if messages_limit_p90 > 0
+                else 0
             )
             msg_bar = self._render_wide_progress_bar(msg_pct, width=bar_w)
             screen_buffer.append(
@@ -361,7 +297,8 @@ class SessionDisplayComponent:
         if layout.show_time_bar:
             time_pct = (
                 percentage(elapsed_session_minutes, total_session_minutes)
-                if total_session_minutes > 0 else 0
+                if total_session_minutes > 0
+                else 0
             )
             time_bar = self._render_wide_progress_bar(time_pct, width=bar_w)
             time_remaining = max(0, total_session_minutes - elapsed_session_minutes)
@@ -383,7 +320,7 @@ class SessionDisplayComponent:
         # Burn rate + optional sparkline
         if layout.show_burn_rate:
             velocity_emoji = VelocityIndicator.get_velocity_emoji(burn_rate)
-            sparkline_str  = ""
+            sparkline_str = ""
             if layout.show_sparkline and burn_rate_history:
                 spark = render_sparkline(burn_rate_history, width=10)
                 sparkline_str = f"  [dim]{spark}[/]"
@@ -394,7 +331,8 @@ class SessionDisplayComponent:
             )
             cost_per_min = (
                 session_cost / max(1, elapsed_session_minutes)
-                if elapsed_session_minutes > 0 else 0
+                if elapsed_session_minutes > 0
+                else 0
             )
             screen_buffer.append(
                 f"{_I_COSTRATE} [value]Cost Rate:[/]  "
@@ -422,11 +360,12 @@ class SessionDisplayComponent:
     ) -> None:
         from claude_monitor.terminal.themes import render_sparkline
 
-        bar_w        = layout.bar_width
+        bar_w = layout.bar_width
         cost_display = CostIndicator.render(session_cost)
         cost_per_min = (
             session_cost / max(1, elapsed_session_minutes)
-            if elapsed_session_minutes > 0 else 0
+            if elapsed_session_minutes > 0
+            else 0
         )
 
         screen_buffer.append(f"{_I_COST} [value]Session Cost:[/]  {cost_display}")
@@ -448,7 +387,7 @@ class SessionDisplayComponent:
         )
 
         velocity_emoji = VelocityIndicator.get_velocity_emoji(burn_rate)
-        sparkline_str  = ""
+        sparkline_str = ""
         if layout.show_sparkline and burn_rate_history:
             spark = render_sparkline(burn_rate_history, width=10)
             sparkline_str = f"  [dim]{spark}[/]"
@@ -516,65 +455,69 @@ class SessionDisplayComponent:
         args: Optional[Any] = None,
     ) -> list[str]:
         """Format screen shown when there is no active Claude session."""
+        from rich.align import Align
+        from rich.box import ROUNDED
+        from rich.console import Group
+        from rich.panel import Panel
+        from rich.text import Text
+
         from claude_monitor.terminal.themes import AnimationState
-        from claude_monitor.ui.adaptive_layout import get_layout_config
+        from claude_monitor.ui.adaptive_layout import get_terminal_size
+        from claude_monitor.ui.dashboard import _PLAN_LABEL, _PLAN_STYLE, card_width
 
         animation_level = getattr(args, "animation", "subtle") if args else "subtle"
-        layout          = get_layout_config(animation_level=animation_level)
-        bar_w           = layout.bar_width
+        plan_style = _PLAN_STYLE.get(plan.lower(), "header")
+        plan_label = _PLAN_LABEL.get(plan.lower(), plan.upper())
 
-        screen_buffer: list[Any] = []
-
-        header_manager = HeaderManager()
-        screen_buffer.extend(
-            header_manager.create_header_panel(
-                plan=plan,
-                timezone=timezone,
-                animation_frame=AnimationState.get(),
-                animation_level=animation_level,
-            )
-        )
-
-        empty_bar = TokenProgressBar(width=bar_w).render(0.0)
-        screen_buffer.append(f"{_I_TOKENS} [value]Token Usage:[/]   {empty_bar}")
-        screen_buffer.append("")
-        screen_buffer.append(
-            f"{_I_TOKENS} [value]Tokens:[/]       [value]0[/] / "
-            f"[dim]~{token_limit:,}[/] ([info]0 left[/])"
-        )
-        screen_buffer.append(
-            f"{_I_BURN} [value]Burn Rate:[/]    [warning]0.0[/] [dim]tokens/min[/]"
-        )
-        screen_buffer.append(
-            f"{_I_COSTRATE} [value]Cost Rate:[/]    [cost.low]$0.00[/] [dim]$/min[/]"
-        )
-        screen_buffer.append(
-            f"{_I_MESSAGES} [value]Sent Messages:[/] [info]0[/] [dim]messages[/]"
-        )
-        screen_buffer.append("")
-
+        # Current time string (best effort)
+        current_time_str = "--:--:--"
         if current_time and args:
             try:
-                display_tz        = pytz.timezone(args.timezone)
-                current_time_disp = current_time.astimezone(display_tz)
-                current_time_str  = format_display_time(
-                    current_time_disp,
+                display_tz = pytz.timezone(args.timezone)
+                current_time_str = format_display_time(
+                    current_time.astimezone(display_tz),
                     get_time_format_preference(args),
                     include_seconds=True,
                 )
-                screen_buffer.append(
-                    f"{_I_STATUS} [dim]{current_time_str}[/] "
-                    f"o [info]No active session[/] | [dim]Ctrl+C to exit[/] 🟨"
-                )
             except (pytz.exceptions.UnknownTimeZoneError, AttributeError):
-                screen_buffer.append(
-                    f"{_I_STATUS} [dim]--:--:--[/] "
-                    f"o [info]No active session[/] | [dim]Ctrl+C to exit[/] 🟨"
-                )
-        else:
-            screen_buffer.append(
-                f"{_I_STATUS} [dim]--:--:--[/] "
-                f"o [info]No active session[/] | [dim]Ctrl+C to exit[/] 🟨"
-            )
+                pass
 
-        return screen_buffer
+        dot = AnimationState.live_dot(animation_level)
+
+        title = Text()
+        title.append(f"{_IC['header']} ", style=plan_style)
+        title.append("CLAUDE MONITOR", style="bold value")
+        title.append("   ")
+        title.append(plan_label, style=f"bold {plan_style}")
+
+        body = Group(
+            Text(f"{dot} Waiting for an active Claude session…", style="success"),
+            Text(),
+            Text.from_markup(
+                f"[dim]Send a message in Claude Code to begin tracking. "
+                f"Plan limit: [/][value]{token_limit:,}[/][dim] tokens.[/]"
+            ),
+        )
+
+        cols, _rows = get_terminal_size()
+        footer = Text()
+        footer.append(current_time_str, style="dim")
+        footer.append("   ")
+        footer.append("m", style="value")
+        footer.append(" menu", style="dim")
+        footer.append("  ")
+        footer.append("^C", style="value")
+        footer.append(" quit", style="dim")
+
+        panel = Panel(
+            body,
+            box=ROUNDED,
+            border_style=plan_style,
+            title=title,
+            title_align="left",
+            subtitle=footer,
+            subtitle_align="left",
+            padding=(1, 3),
+            width=card_width(cols),
+        )
+        return [Align.center(panel)]

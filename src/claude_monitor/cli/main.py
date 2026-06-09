@@ -88,6 +88,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         except Exception:
             args = None
         from claude_monitor.ui.config_menu import run_config_menu
+
         run_config_menu(args)
         return 0
 
@@ -95,6 +96,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         if sys.platform == "win32":
             import ctypes
+
             ctypes.windll.kernel32.SetConsoleTitleW(f"Claude Monitor {__version__}")
     except Exception:
         pass
@@ -103,6 +105,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     # Skipped in popup mode (no interactive prompts there).
     try:
         from claude_monitor.utils.update_check import startup_update_check
+
         startup_update_check(skip="--popup" in argv)
     except Exception:
         pass
@@ -116,6 +119,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         # Auto-create keywords file on first run (no-op if it already exists)
         try:
             from claude_monitor.data.keyword_analyzer import ensure_keywords_file
+
             ensure_keywords_file()
         except Exception:
             pass  # never crash startup over this
@@ -123,6 +127,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         # Background PyPI update check (daemon thread, populates status bar notice)
         try:
             from claude_monitor.utils.update_check import UpdateChecker
+
             UpdateChecker.get().start()
         except Exception:
             pass
@@ -163,9 +168,8 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 # ── First-run plan picker ──────────────────────────────────────────────────────
 
-def _plan_first_run_check(
-    argv: List[str], args: "argparse.Namespace"
-) -> None:
+
+def _plan_first_run_check(argv: List[str], args: "argparse.Namespace") -> None:
     """Show a one-time plan selection screen if no plan has been saved yet.
 
     Writes the choice to ``last_used.json`` as ``saved_plan`` so it is
@@ -177,7 +181,7 @@ def _plan_first_run_check(
     """
     import json as _json
 
-    config_dir    = Path.home() / ".claude-monitor"
+    config_dir = Path.home() / ".claude-monitor"
     last_used_path = config_dir / "last_used.json"
 
     # Already confirmed a plan before?
@@ -189,7 +193,7 @@ def _plan_first_run_check(
             pass
 
     if "saved_plan" in existing:
-        return   # already chosen — nothing to do
+        return  # already chosen — nothing to do
 
     # --plan was passed explicitly on the CLI — respect it and save it
     if any(a.startswith("--plan") for a in argv):
@@ -197,29 +201,25 @@ def _plan_first_run_check(
         return
 
     # ── Show the one-time picker ───────────────────────────────────────────
-    from rich.console import Console as _Con
-    from rich.rule import Rule as _Rule
+    from rich.align import Align as _Align
+    from rich.box import ROUNDED as _ROUNDED
+    from rich.console import Group as _Group
+    from rich.panel import Panel as _Panel
+    from rich.table import Table as _Table
     from rich.text import Text as _Txt
 
-    c = _Con()
-    c.print()
     from claude_monitor.terminal.icons import ICONS as _IC
-    _h = _IC["header"]
-    title = _Txt(f"{_h}  CLAUDE MONITOR  --  QUICK SETUP  {_h}", style="bold")
-    c.print(_Rule(title=title, style="#C97A4A"))
-    c.print()
-    c.print("  [bold]What Claude plan are you on?[/bold]")
-    c.print("  [dim](This sets your token & cost limits correctly. Press [m] later to change.)[/dim]")
-    c.print()
+    from claude_monitor.terminal.themes import get_themed_console
+
+    c = get_themed_console()
 
     # ── Try to detect plan from history ────────────────────────────────────
     detected_plan = None
     try:
+        from claude_monitor.data.analyzer import SessionAnalyzer
         from claude_monitor.data.plan_detector import detect_plan_from_history
         from claude_monitor.data.reader import load_usage_entries
-        from claude_monitor.data.analyzer import SessionAnalyzer
 
-        # Load the history and detect plan
         entries, _ = load_usage_entries()
         if entries:
             analyzer = SessionAnalyzer()
@@ -229,36 +229,84 @@ def _plan_first_run_check(
     except Exception:
         pass  # Silently fail if detection doesn't work
 
-    c.print("  [bold cyan][1][/bold cyan]  [value]Pro[/value]           [dim]$20/month  — most common[/dim]")
-    c.print("  [bold cyan][2][/bold cyan]  [value]Max 5[/value]         [dim]$100/month — 5× usage[/dim]")
-    c.print("  [bold cyan][3][/bold cyan]  [value]Max 20[/value]        [dim]$200/month — 20× usage[/dim]")
-    c.print("  [bold cyan][4][/bold cyan]  [value]Custom[/value]        [dim]Calculate limits from your usage history[/dim]")
+    opts = _Table.grid(padding=(0, 2))
+    opts.add_column(justify="right", no_wrap=True)
+    opts.add_column(no_wrap=True)
+    opts.add_column(style="dim")
+    _rows = [
+        ("1", "Pro", "$20/month  ·  most common", "pro"),
+        ("2", "Max 5", "$100/month  ·  5× usage", "max5"),
+        ("3", "Max 20", "$200/month  ·  20× usage", "max20"),
+        ("4", "Custom", "limits learned from your history", "custom"),
+    ]
+    for num, name, hint, key in _rows:
+        marker = "  ◀ detected" if key == detected_plan else ""
+        opts.add_row(
+            f"[bold {('plan.' + key) if key != 'custom' else 'plan.custom'}]{num}[/]",
+            f"[value]{name}[/]",
+            f"{hint}[success]{marker}[/]",
+        )
 
-    if detected_plan:
-        c.print(f"  [dim]✓ We detected you may be on [bold]{detected_plan.upper()}[/bold] based on your history[/dim]")
+    body = _Group(
+        _Txt.from_markup("[bold]Which Claude plan are you on?[/bold]"),
+        _Txt.from_markup(
+            "[dim]Sets your token & cost limits. Press [value]m[/value][dim] later to change.[/dim]"
+        ),
+        _Txt(),
+        opts,
+    )
+    title = _Txt()
+    title.append(f"{_IC['header']} ", style="plan.pro")
+    title.append("WELCOME TO CLAUDE MONITOR", style="bold value")
+    panel = _Panel(
+        body,
+        box=_ROUNDED,
+        border_style="plan.pro",
+        title=title,
+        title_align="left",
+        padding=(1, 3),
+        width=64,
+    )
+    c.print()
+    c.print(_Align.center(panel))
     c.print()
 
-    _MAP = {"1": "pro", "2": "max5", "3": "max20", "4": "custom",
-            "pro": "pro", "max5": "max5", "max20": "max20", "custom": "custom"}
+    _MAP = {
+        "1": "pro",
+        "2": "max5",
+        "3": "max20",
+        "4": "custom",
+        "pro": "pro",
+        "max5": "max5",
+        "max20": "max20",
+        "custom": "custom",
+    }
 
     # Map detected plan to the default option
     _PLAN_TO_NUM = {"pro": "1", "max5": "2", "max20": "3", "custom": "4"}
     default_choice = _PLAN_TO_NUM.get(detected_plan, "1") if detected_plan else "1"
 
     from rich.prompt import Prompt as _P
-    raw = _P.ask(
-        "  [bold cyan]Enter number or name[/bold cyan]",
-        default=default_choice,
-        console=c,
-        show_default=False,
-    ).strip().lower()
+
+    raw = (
+        _P.ask(
+            "  [bold cyan]Enter number or name[/bold cyan]",
+            default=default_choice,
+            console=c,
+            show_default=False,
+        )
+        .strip()
+        .lower()
+    )
 
     chosen = _MAP.get(raw, "pro")
     args.plan = chosen
 
     c.print()
-    c.print(f"  [success]✓ Plan set to [bold]{chosen.upper()}[/bold]. "
-            f"Press [m] while running to change it.[/success]")
+    c.print(
+        f"  [success]✓ Plan set to [bold]{chosen.upper()}[/bold]. "
+        f"Press [m] while running to change it.[/success]"
+    )
     c.print()
 
     _save_plan_choice(chosen, config_dir, last_used_path, existing)
@@ -310,6 +358,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
         # ── Popup / PiP mode ─────────────────────────────────────────────────
         if getattr(args, "popup", False):
             from claude_monitor.ui.popup_window import launch_popup
+
             launch_popup(args, str(data_path))
             return
 
@@ -394,9 +443,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
                             total_tokens: int = active_blocks[0].get("totalTokens", 0)
                             logger.debug(f"Active block tokens: {total_tokens}")
 
-                    renderable = display_controller.create_data_display(
-                        data, args, tl
-                    )
+                    renderable = display_controller.create_data_display(data, args, tl)
 
                     if live_display:
                         live_display.update(renderable)
@@ -451,6 +498,7 @@ def _run_monitoring(args: argparse.Namespace) -> None:
                             live_display_active = False
 
                             from claude_monitor.ui.config_menu import ConfigMenu
+
                             menu_console = get_themed_console(
                                 force_theme=getattr(args, "theme", "auto").lower()
                             )
@@ -642,9 +690,12 @@ def _handle_export(args: argparse.Namespace) -> None:
         export_path = args.export
 
         # Load usage data and create session blocks
-        from claude_monitor.data.reader import load_usage_entries
         from claude_monitor.data.analyzer import SessionAnalyzer
-        from claude_monitor.data.exporter import export_sessions_to_csv, export_summary_to_csv
+        from claude_monitor.data.exporter import (
+            export_sessions_to_csv,
+            export_summary_to_csv,
+        )
+        from claude_monitor.data.reader import load_usage_entries
 
         print_themed("Loading usage data...", style="info")
         entries, _ = load_usage_entries(str(data_path))
@@ -667,7 +718,9 @@ def _handle_export(args: argparse.Namespace) -> None:
         print_themed(f"✓ Sessions exported to: {sessions_file}", style="success")
 
         # Also generate summary
-        summary_dir = Path(export_path).parent if export_path else Path.home() / "Downloads"
+        summary_dir = (
+            Path(export_path).parent if export_path else Path.home() / "Downloads"
+        )
         summary_path = summary_dir / "claude-monitor-summary.csv"
         summary_file = export_summary_to_csv(blocks, str(summary_path))
         print_themed(f"✓ Summary exported to: {summary_file}", style="success")
@@ -689,8 +742,8 @@ def _run_table_view(
 
         # Handle sessions view mode separately
         if view_mode == "sessions":
-            from claude_monitor.data.reader import load_usage_entries
             from claude_monitor.data.analyzer import SessionAnalyzer
+            from claude_monitor.data.reader import load_usage_entries
 
             logger.info("Loading session data...")
             entries, _ = load_usage_entries(str(data_path))
@@ -710,15 +763,19 @@ def _run_table_view(
             sessions_data = []
             for block in blocks:
                 if not block.is_gap:
-                    sessions_data.append({
-                        "id": block.id,
-                        "start_time": block.start_time.strftime("%Y-%m-%d %H:%M:%S"),
-                        "duration_minutes": block.duration_minutes,
-                        "models": block.models,
-                        "total_tokens": block.token_counts.total_tokens,
-                        "cost": block.cost_usd,
-                        "message_count": block.sent_messages_count,
-                    })
+                    sessions_data.append(
+                        {
+                            "id": block.id,
+                            "start_time": block.start_time.strftime(
+                                "%Y-%m-%d %H:%M:%S"
+                            ),
+                            "duration_minutes": block.duration_minutes,
+                            "models": block.models,
+                            "total_tokens": block.token_counts.total_tokens,
+                            "cost": block.cost_usd,
+                            "message_count": block.sent_messages_count,
+                        }
+                    )
 
             # Calculate totals
             totals = {
@@ -740,15 +797,21 @@ def _run_table_view(
             aggregated_data = aggregator.aggregate()
 
             if not aggregated_data:
-                print_themed(f"No usage data found for {view_mode} view", style="warning")
+                print_themed(
+                    f"No usage data found for {view_mode} view", style="warning"
+                )
                 return
 
             # Calculate totals from aggregated data
             totals = {
                 "input_tokens": sum(d["input_tokens"] for d in aggregated_data),
                 "output_tokens": sum(d["output_tokens"] for d in aggregated_data),
-                "cache_creation_tokens": sum(d["cache_creation_tokens"] for d in aggregated_data),
-                "cache_read_tokens": sum(d["cache_read_tokens"] for d in aggregated_data),
+                "cache_creation_tokens": sum(
+                    d["cache_creation_tokens"] for d in aggregated_data
+                ),
+                "cache_read_tokens": sum(
+                    d["cache_read_tokens"] for d in aggregated_data
+                ),
                 "total_tokens": sum(
                     d["input_tokens"]
                     + d["output_tokens"]

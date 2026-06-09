@@ -4,7 +4,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A real-time terminal monitor for Claude Code. Shows token usage, session cost, burn rate, and keyword analytics so you know exactly how you're spending your plan limits.
+A real-time terminal monitor for Claude Code. A clean, centered dashboard shows token usage, session cost, burn rate, and keyword analytics so you know exactly how you're spending your plan limits — at a glance.
 
 Fork of [Maciek-roboblog/Claude-Code-Usage-Monitor](https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor), extended with keyword analytics, an interactive settings menu, adaptive layout, and a floating popup window.
 
@@ -12,23 +12,44 @@ Fork of [Maciek-roboblog/Claude-Code-Usage-Monitor](https://github.com/Maciek-ro
 
 ## Installation
 
-### Option 1: Standalone Executable (Recommended for simplicity)
+### Fastest: one-line install (no Python required)
 
-No Python required! Download and run immediately.
+Paste one line into your terminal. It downloads the latest standalone build, puts
+`claude-monitor` on your PATH, and (on Windows) adds Desktop + Start Menu shortcuts.
 
-Go to [Releases](https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/latest) and download for your platform:
+**Windows** (PowerShell):
 
-| Platform | File | How to run |
-|----------|------|-----------|
-| **Windows** | `claude-monitor-windows.exe` | Double-click, or `.\claude-monitor-windows.exe` in terminal |
-| **macOS** | `claude-monitor-macos` | `chmod +x claude-monitor-macos`, then `./claude-monitor-macos` |
-| **Linux** | `claude-monitor-linux` | `chmod +x claude-monitor-linux`, then `./claude-monitor-linux` |
+```powershell
+irm https://raw.githubusercontent.com/wyattmcph/wyattmcph-claude-monitor/main/install.ps1 | iex
+```
 
-**Note for Windows:** Windows Defender may show a SmartScreen warning (because the exe isn't code-signed). Click "More info" then "Run anyway".
+**macOS / Linux**:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/wyattmcph/wyattmcph-claude-monitor/main/install.sh | bash
+```
+
+Then just run `claude-monitor` (or launch it from the Desktop shortcut on Windows).
+
+> **Windows SmartScreen:** the exe isn't code-signed, so Defender may show a warning the
+> first time. Click **More info → Run anyway**.
 
 ---
 
-### Option 2: Python Package (Recommended for flexibility)
+### Manual download
+
+Prefer to grab the binary yourself? Go to
+[Releases](https://github.com/wyattmcph/wyattmcph-claude-monitor/releases/latest):
+
+| Platform | File | How to run |
+|----------|------|-----------|
+| **Windows** | `claude-monitor-windows.exe` | Double-click, or `.\claude-monitor-windows.exe` |
+| **macOS** | `claude-monitor-macos` | `chmod +x claude-monitor-macos`, then `./claude-monitor-macos` |
+| **Linux** | `claude-monitor-linux` | `chmod +x claude-monitor-linux`, then `./claude-monitor-linux` |
+
+---
+
+### Python package (for developers)
 
 Install via package manager if you have Python 3.9+. Great if you want to run it from any terminal as `claude-monitor`.
 
@@ -196,7 +217,12 @@ Bar widths also adjust to terminal width. The keyword panel is always the first 
 
 ---
 
-## v3.5.0 Features
+## Features
+
+### Redesigned dashboard (v3.6)
+A single rounded, plan-coloured card centered in your terminal — aligned metric rows,
+severity-coloured progress bars, compact limits, burn-rate sparkline and live model split.
+It scales as you resize and looks crisp even in the standalone Windows exe.
 
 ### CSV Export
 Export your session data for analysis in Excel or other tools:

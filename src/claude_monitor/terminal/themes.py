@@ -610,7 +610,10 @@ class ThemeManager:
             Rich Console instance configured with the selected theme.
         """
         theme: ThemeConfig = self.get_theme(theme_name, force_detection)
-        return Console(theme=theme.rich_theme, force_terminal=True)
+        # safe_box=False forces the pretty rounded/heavy box glyphs instead of
+        # the ASCII downgrade — safe because console_setup.py guarantees a
+        # UTF-8 console on every platform, including the frozen Windows exe.
+        return Console(theme=theme.rich_theme, force_terminal=True, safe_box=False)
 
     def get_current_theme(self) -> Optional[ThemeConfig]:
         """Get currently active theme.

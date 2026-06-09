@@ -7,6 +7,11 @@ Allows running the package as a module: python -m claude_monitor
 import sys
 from typing import NoReturn
 
+# Bootstrap the console into UTF-8 + truecolor before any UI module loads.
+from .terminal.console_setup import setup_console
+
+setup_console()
+
 from .cli.main import main
 
 

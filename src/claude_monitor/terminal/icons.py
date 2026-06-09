@@ -22,43 +22,44 @@ from typing import Dict
 # ── Icon sets ──────────────────────────────────────────────────────────────────
 
 _MODERN: Dict[str, str] = {
-    "cost":      "◈",
-    "tokens":    "◉",
-    "messages":  "▷",
-    "burn":      "⚡",
-    "model":     "◆",
-    "time":      "⏳",
-    "predict":   "✦",
+    "cost": "◈",
+    "tokens": "◉",
+    "messages": "▷",
+    "burn": "↯",
+    "model": "◆",
+    "time": "◷",
+    "predict": "✦",
     "cost_rate": "↗",
-    "status":    "●",
+    "status": "●",
     "separator": "◌",
-    "keyword":   "◈",
-    "header":    "✦",
-    "warning":   "⚠",
-    "check":     "✓",
-    "cross":     "✗",
+    "keyword": "◈",
+    "header": "✦",
+    "warning": "⚠",
+    "check": "✓",
+    "cross": "✗",
 }
 
 _LEGACY: Dict[str, str] = {
-    "cost":      "$",
-    "tokens":    "%",
-    "messages":  ">",
-    "burn":      "~",
-    "model":     "+",
-    "time":      "-",
-    "predict":   "*",
+    "cost": "$",
+    "tokens": "%",
+    "messages": ">",
+    "burn": "~",
+    "model": "+",
+    "time": "-",
+    "predict": "*",
     "cost_rate": "^",
-    "status":    "*",
+    "status": "*",
     "separator": "o",
-    "keyword":   "#",
-    "header":    "*",
-    "warning":   "!",
-    "check":     "OK",
-    "cross":     "X",
+    "keyword": "#",
+    "header": "*",
+    "warning": "!",
+    "check": "OK",
+    "cross": "X",
 }
 
 
 # ── Detection ──────────────────────────────────────────────────────────────────
+
 
 def _is_modern_terminal() -> bool:
     """Return True if the terminal can render extended Unicode glyphs.
@@ -69,6 +70,11 @@ def _is_modern_terminal() -> bool:
     the ASCII set.  On every other platform / install method the modern
     set is used.
     """
+    if os.environ.get("CLAUDE_MONITOR_FORCE_UNICODE"):
+        # Console was bootstrapped into UTF-8 mode (see console_setup.py) —
+        # extended glyphs render correctly even in a frozen Windows console.
+        return True
+
     if not getattr(sys, "frozen", False):
         # Not frozen (uv / pip / python -m) — always a capable terminal
         return True
@@ -79,9 +85,9 @@ def _is_modern_terminal() -> bool:
 
     # Frozen .exe on Windows: only safe if a modern host is detected
     return bool(
-        os.environ.get("WT_SESSION")        # Windows Terminal
-        or os.environ.get("TERM_PROGRAM")   # VS Code integrated terminal
-        or os.environ.get("COLORTERM")      # truecolor-capable terminals
+        os.environ.get("WT_SESSION")  # Windows Terminal
+        or os.environ.get("TERM_PROGRAM")  # VS Code integrated terminal
+        or os.environ.get("COLORTERM")  # truecolor-capable terminals
         or os.environ.get("TERM", "").startswith("xterm")
     )
 
